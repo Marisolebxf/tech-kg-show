@@ -30,6 +30,26 @@ const curlSample = computed(
   -d '${requestJson.value.replaceAll("'", "\\'")}'`,
 )
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function highlightCode(value: string) {
+  return escapeHtml(value)
+    .replace(/("(?:\\.|[^"\\])*")(?=\s*:)/g, '<span class="code-token code-token--key">$1</span>')
+    .replace(/(:\s*)("(?:\\.|[^"\\])*")/g, '$1<span class="code-token code-token--string">$2</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="code-token code-token--literal">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="code-token code-token--number">$1</span>')
+    .replace(/\b(import|const|await|fetch|print|response|payload|url|curl|POST)\b/g, '<span class="code-token code-token--keyword">$1</span>')
+}
+
+const highlightedRequestJson = computed(() => highlightCode(requestJson.value))
+const highlightedResponseJson = computed(() => highlightCode(responseJson.value))
+const highlightedCurlSample = computed(() => highlightCode(curlSample.value))
+
 async function copySample() {
   try {
     await navigator.clipboard?.writeText(curlSample.value)
@@ -80,7 +100,7 @@ async function copySample() {
         </div>
         <div class="prototype-code-block">
           <div>请求 JSON</div>
-          <pre>{{ requestJson }}</pre>
+          <pre v-html="highlightedRequestJson"></pre>
         </div>
       </section>
 
@@ -89,7 +109,7 @@ async function copySample() {
           <h2 class="kg-panel__title">Mock 响应</h2>
           <span class="prototype-latency">128 ms</span>
         </div>
-        <pre>{{ responseJson }}</pre>
+        <pre v-html="highlightedResponseJson"></pre>
       </section>
 
       <aside class="kg-panel prototype-summary">
@@ -143,7 +163,7 @@ async function copySample() {
 
       <section class="kg-panel prototype-curl">
         <div class="kg-panel__header"><h2 class="kg-panel__title">cURL 示例</h2></div>
-        <pre>{{ curlSample }}</pre>
+        <pre v-html="highlightedCurlSample"></pre>
       </section>
     </main>
 
@@ -356,6 +376,30 @@ async function copySample() {
   line-height: 1.65;
   white-space: pre-wrap;
   overflow: auto;
+}
+
+.prototype-code-block :deep(.code-token--key),
+.prototype-code-block :deep(.code-token--keyword),
+.prototype-response pre :deep(.code-token--key),
+.prototype-response pre :deep(.code-token--keyword),
+.prototype-curl pre :deep(.code-token--key),
+.prototype-curl pre :deep(.code-token--keyword) {
+  color: #7c3aed;
+}
+
+.prototype-code-block :deep(.code-token--string),
+.prototype-response pre :deep(.code-token--string),
+.prototype-curl pre :deep(.code-token--string) {
+  color: #047857;
+}
+
+.prototype-code-block :deep(.code-token--number),
+.prototype-code-block :deep(.code-token--literal),
+.prototype-response pre :deep(.code-token--number),
+.prototype-response pre :deep(.code-token--literal),
+.prototype-curl pre :deep(.code-token--number),
+.prototype-curl pre :deep(.code-token--literal) {
+  color: #d97706;
 }
 
 .prototype-code-block div {

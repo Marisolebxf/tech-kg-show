@@ -1,4 +1,4 @@
-export type DataSource = 'all' | 'knowledge_graph' | 'cnki' | 'wanfang' | 'web_of_science'
+export type DataSource = 'all' | 'mysql' | 'knowledge_graph'
 
 export interface ExpertPaperCooperationDemoRequest {
   dataSource: DataSource
@@ -12,18 +12,18 @@ export interface StructuredResultPayload {
   authorList: string[]
   authorUnits: string[]
   paperTopics: string[]
+  researchDirections: string[]
   cooperationPaperCount: number
   journalLevelCount: Record<string, number>
   conferenceLevelCount: Record<string, number>
   cooperationFrequency: number
   academicImpactScore: number
   citation: { total: number; max: number }
-  cooperationTimeRange: { startYear: number; endYear: number; displayText: string }
-  stableTeamName?: string
+  cooperationTimeRange: { startTime: string; endTime: string; displayText: string }
   stableTeamMembers?: string[]
-  coreCollaborators?: string[]
+  coreTeamMembers?: string[]
   sharedContribution?: string[]
-  representativePapers?: string[]
+  dataSource?: DataSource
 }
 
 export interface ExpertPaperCooperationStructuredResultOnlyResponse {

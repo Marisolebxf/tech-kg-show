@@ -109,6 +109,173 @@ const errorMsg = ref('')
 const lastTestTime = ref('待执行')
 const graphNodes = ref<GraphNode[]>([])
 
+type EnterpriseDetail = {
+  id: string
+  name: string
+  orgType: string
+  province: string
+  city: string
+  listingStatus: string
+  registeredCapital: number
+  incorporationYear: number
+  tags: Array<{ tag: string; level: string }>
+  industryChains: Array<{ chain: string; score: number }>
+  industryClass: string
+  mainActivities: string
+  mainProducts: string[]
+  patentCount: number
+  patents: Array<{ id: string; applicant: string }>
+  financial: {
+    period: string
+    operatingRevenue: number
+    pureProfit: number
+    totalAssets: number
+    rdAmount: number
+    employees: number
+  }
+  cpc: Array<{ cpcSection: string; count: number }>
+  coreTechLayout: string
+}
+
+type ScholarDetail = {
+  id: string
+  name: string
+  title: string
+  institution: string
+}
+
+type RelationType = {
+  value: string
+  label: string
+}
+
+type RoleType = {
+  value: string
+  label: string
+  level: string
+}
+
+type BuiltRelation = {
+  relationId: string
+  scholarId: string
+  scholarName: string
+  scholarTitle: string
+  scholarInstitution: string
+  enterpriseId: string
+  enterpriseName: string
+  enterpriseBasic: string
+  relationType: string
+  roleLabel: string
+  roleLevel: string
+  techField: string
+  period: { start: string; end: string }
+}
+
+const scholarProfiles: Record<string, ScholarDetail> = {
+  'COOP-SCH001': { id: 'COOP-SCH001', name: '陈建国', title: '研究员', institution: '清华大学智能产业研究院' },
+  'COOP-SCH002': { id: 'COOP-SCH002', name: '李佳宁', title: '教授', institution: '北京航空航天大学计算机学院' },
+  'COOP-SCH003': { id: 'COOP-SCH003', name: '张明远', title: '首席科学家', institution: '中国科学院自动化研究所' },
+}
+
+const enterpriseProfiles: Record<string, EnterpriseDetail> = {
+  ENT001: {
+    id: 'ENT001',
+    name: '企业001有限公司',
+    orgType: '国有企业',
+    province: '浙江',
+    city: '杭州',
+    listingStatus: '已挂牌',
+    registeredCapital: 383708,
+    incorporationYear: 2017,
+    tags: [{ tag: '独角兽', level: '省级' }],
+    industryChains: [{ chain: '集成电路', score: 89 }],
+    industryClass: '集成电路制造',
+    mainActivities: '集成电路研发与制造',
+    mainProducts: ['工业软件', '智能传感器', 'AI芯片'],
+    patentCount: 7,
+    patents: [{ id: 'P001', applicant: '企业001有限公司' }],
+    financial: { period: '2024Q4', operatingRevenue: 1200000000, pureProfit: 150000000, totalAssets: 5000000000, rdAmount: 80000000, employees: 1200 },
+    cpc: [{ cpcSection: 'G', count: 4 }, { cpcSection: 'H', count: 1 }, { cpcSection: 'A', count: 2 }],
+    coreTechLayout: '深耕集成电路研发制造，核心聚焦工业软件，布局智能传感器。',
+  },
+  ENT002: {
+    id: 'ENT002',
+    name: '星河智能装备股份有限公司',
+    orgType: '民营企业',
+    province: '江苏',
+    city: '苏州',
+    listingStatus: '上市公司',
+    registeredCapital: 268000,
+    incorporationYear: 2014,
+    tags: [{ tag: '专精特新', level: '国家级' }],
+    industryChains: [{ chain: '智能装备', score: 86 }],
+    industryClass: '智能装备制造',
+    mainActivities: '工业机器人与智能产线研发',
+    mainProducts: ['协作机器人', '工业控制器', '视觉检测系统'],
+    patentCount: 16,
+    patents: [{ id: 'P018', applicant: '星河智能装备股份有限公司' }],
+    financial: { period: '2024Q4', operatingRevenue: 860000000, pureProfit: 92000000, totalAssets: 2600000000, rdAmount: 56000000, employees: 860 },
+    cpc: [{ cpcSection: 'G', count: 7 }, { cpcSection: 'B', count: 5 }, { cpcSection: 'H', count: 4 }],
+    coreTechLayout: '围绕机器人感知、运动控制与智能产线形成软硬件一体化技术布局。',
+  },
+  ENT003: {
+    id: 'ENT003',
+    name: '启明数据技术有限公司',
+    orgType: '高新技术企业',
+    province: '北京',
+    city: '北京',
+    listingStatus: '未上市',
+    registeredCapital: 96000,
+    incorporationYear: 2020,
+    tags: [{ tag: '高新技术企业', level: '国家级' }],
+    industryChains: [{ chain: '人工智能', score: 91 }],
+    industryClass: '人工智能软件服务',
+    mainActivities: '知识图谱平台与行业大模型研发',
+    mainProducts: ['知识图谱平台', '行业大模型', '智能问答系统'],
+    patentCount: 11,
+    patents: [{ id: 'P032', applicant: '启明数据技术有限公司' }],
+    financial: { period: '2024Q4', operatingRevenue: 430000000, pureProfit: 52000000, totalAssets: 980000000, rdAmount: 62000000, employees: 520 },
+    cpc: [{ cpcSection: 'G', count: 9 }, { cpcSection: 'H', count: 2 }],
+    coreTechLayout: '聚焦知识图谱、语义检索和行业大模型推理，形成数据智能产品矩阵。',
+  },
+}
+
+const relationTypeOptions: RelationType[] = [
+  { value: 'employment', label: '任职' },
+  { value: 'advisor', label: '顾问' },
+  { value: 'rd_cooperation', label: '研发合作' },
+  { value: 'project_cooperation', label: '项目合作' },
+  { value: 'tech_cooperation', label: '技术合作' },
+]
+
+const roleTypeOptions: RoleType[] = [
+  { value: 'chief_scientist', label: '首席科学家', level: 'L1' },
+  { value: 'technical_consultant', label: '技术顾问', level: 'L2' },
+  { value: 'project_leader', label: '项目负责人', level: 'L2' },
+  { value: 'technical_partner', label: '技术合伙人', level: 'L1' },
+]
+
+function relationLabel(value: string) {
+  return relationTypeOptions.find((item) => item.value === value)?.label ?? value
+}
+
+function roleOption(value: string) {
+  return roleTypeOptions.find((item) => item.value === value) ?? roleTypeOptions[0]
+}
+
+function currentScholar() {
+  return scholarProfiles[buildParams.value.scholarId] ?? scholarProfiles['COOP-SCH001']
+}
+
+function enterpriseById(id: string) {
+  return enterpriseProfiles[id] ?? enterpriseProfiles.ENT001
+}
+
+function formatMoney(value: number) {
+  if (value >= 100000000) return `${Number((value / 100000000).toFixed(2))} 亿元`
+  return `${value} 万元`
+}
+
 const dimensionChinese: Record<string, string> = {
   industry_status: '行业地位',
   core_tech: '核心技术',
@@ -122,17 +289,17 @@ function buildRadialGraph(
 ): GraphNode[] {
   const cx = GW / 2
   const cy = GH / 2
-  const radius = 380
+  const radius = 330
   const n = items.length
   return [
     {
       key: 'expert',
       title: centerTitle,
       subtitle: centerSubtitle,
-      x: cx - 150,
+      x: cx - 130,
       y: cy - 47,
-      width: 300,
-      height: 94,
+      width: 260,
+      height: 84,
       kind: 'expert',
     },
     ...items.map((item, i) => {
@@ -144,17 +311,17 @@ function buildRadialGraph(
         title: item.title,
         subtitle: item.subtitle,
         relation: item.relation,
-        x: ccx - 180,
-        y: ccy - 55,
-        width: 360,
-        height: 110,
+        x: ccx - 150,
+        y: ccy - 50,
+        width: 300,
+        height: 100,
         kind: 'company' as const,
       }
     }),
   ]
 }
 
-const graphZoom = ref(0.56)
+const graphZoom = ref(0.78)
 const graphStageRef = ref<HTMLElement | null>(null)
 const activeDrag = ref<{ key: string; offsetX: number; offsetY: number } | null>(null)
 
@@ -217,8 +384,8 @@ function relationLabelStyle(node: GraphNode) {
   const normal = { x: (-dy / length) * 28, y: (dx / length) * 28 }
   const directionOffset = to.y < from.y ? -12 : 12
   return {
-    left: `${(from.x + to.x) / 2 + normal.x - 34}px`,
-    top: `${(from.y + to.y) / 2 + normal.y + directionOffset - 18}px`,
+    left: `${(from.x + to.x) / 2 + normal.x}px`,
+    top: `${(from.y + to.y) / 2 + normal.y + directionOffset}px`,
   }
 }
 function relationTone(relation = '') {
@@ -269,127 +436,186 @@ function zoomGraph(event: WheelEvent) {
 
 function loadOptions() {
   options.value = {
-    scholars: [
-      { scholarId: 'COOP-SCH001', name: '张明远' },
-      { scholarId: 'COOP-SCH002', name: '李佳宁' },
-    ],
-    enterprises: [
-      { enterpriseId: 'ENT001', name: '智谱科技有限公司' },
-      { enterpriseId: 'ENT002', name: '星河智能装备股份有限公司' },
-      { enterpriseId: 'ENT003', name: '启明数据技术有限公司' },
-    ],
+    scholars: Object.values(scholarProfiles).map((item) => ({ scholarId: item.id, name: item.name })),
+    enterprises: Object.values(enterpriseProfiles).map((item) => ({ enterpriseId: item.id, name: item.name })),
     edges: [
       { relationId: 'COOP-SCH001->ENT001@0' },
       { relationId: 'COOP-SCH001->ENT002@1' },
+      { relationId: 'COOP-SCH002->ENT003@0' },
     ],
-    relationTypes: [
-      { value: 'employment', label: '任职' },
-      { value: 'consultant', label: '顾问' },
-      { value: 'project_cooperation', label: '项目合作' },
-    ],
-    roles: [
-      { value: 'chief_scientist', label: '首席科学家' },
-      { value: 'technical_consultant', label: '技术顾问' },
-      { value: 'project_leader', label: '项目负责人' },
-    ],
+    relationTypes: relationTypeOptions,
+    roles: roleTypeOptions,
     dimensions: [
       { value: 'industry_status', label: '行业地位' },
       { value: 'core_tech', label: '核心技术' },
       { value: 'financial', label: '经营财务' },
     ],
-    techFields: ['人工智能', '知识图谱', '智能制造'],
-    cpcCodes: ['G06N', 'G06F', 'G05B'],
+    techFields: ['人工智能', '知识图谱', '智能制造', '集成电路', '工业软件'],
+    cpcCodes: ['G06N', 'G06F', 'G05B', 'H01L', 'A61B'],
   }
 }
 
-type MultiKey = 'relationTypes' | 'analysisDimensions' | 'patentCPC'
-function multiArr(key: MultiKey): string[] {
-  if (key === 'relationTypes') return buildParams.value.relationTypes
-  if (key === 'analysisDimensions') return analyzeParams.value.analysisDimensions
-  return analyzeParams.value.patentCPC
-}
-function pushMulti(key: MultiKey, value: string) {
-  if (!value) return
-  const arr = multiArr(key)
-  if (!arr.includes(value)) arr.push(value)
-}
-function removeMulti(key: MultiKey, value: string) {
-  const arr = multiArr(key)
-  const i = arr.indexOf(value)
-  if (i >= 0) arr.splice(i, 1)
-}
-function selectedItems(selected: string[], opts: OptionItem[]) {
-  return opts.filter((o) => selected.includes(o.value ?? ''))
+function buildRelationsForScholar(scholar: ScholarDetail, selectedEnterprise: EnterpriseDetail) {
+  const selectedLabels = buildParams.value.relationTypes.map(relationLabel)
+  const defaults = Object.values(enterpriseProfiles)
+    .filter((item) => item.id !== selectedEnterprise.id)
+    .slice(0, 2)
+    .map((enterprise, index): BuiltRelation => ({
+      relationId: `${scholar.id}->${enterprise.id}@${index + 1}`,
+      scholarId: scholar.id,
+      scholarName: scholar.name,
+      scholarTitle: scholar.title,
+      scholarInstitution: scholar.institution,
+      enterpriseId: enterprise.id,
+      enterpriseName: enterprise.name,
+      enterpriseBasic: `${enterprise.orgType}｜${enterprise.province}${enterprise.city}｜${enterprise.listingStatus}`,
+      relationType: index === 0 ? '顾问' : '项目合作',
+      roleLabel: index === 0 ? '技术顾问' : '项目负责人',
+      roleLevel: index === 0 ? 'L2' : 'L2',
+      techField: index === 0 ? '智能制造' : '知识图谱',
+      period: { start: '2022-01-01', end: '2024-12-31' },
+    }))
+
+  return [
+    {
+      relationId: `${scholar.id}->${selectedEnterprise.id}@0`,
+      scholarId: scholar.id,
+      scholarName: scholar.name,
+      scholarTitle: scholar.title,
+      scholarInstitution: scholar.institution,
+      enterpriseId: selectedEnterprise.id,
+      enterpriseName: selectedEnterprise.name,
+      enterpriseBasic: `${selectedEnterprise.orgType}｜${selectedEnterprise.province}${selectedEnterprise.city}｜${selectedEnterprise.listingStatus}`,
+      relationType: selectedLabels.join('/') || '任职/顾问',
+      roleLabel: roleOption(annotateParams.value.roleType).label,
+      roleLevel: roleOption(annotateParams.value.roleType).level,
+      techField: annotateParams.value.techField,
+      period: annotateParams.value.period,
+    },
+    ...defaults,
+  ]
 }
 
 function handleSearch() {
   loading.value = true
   errorMsg.value = ''
   if (activeSub.value === 'build') {
+    const scholar = currentScholar()
+    const enterprise = enterpriseById(buildParams.value.enterpriseId)
+    const relations = buildRelationsForScholar(scholar, enterprise)
     const data = {
-      scholarId: buildParams.value.scholarId,
-      scholarName: '张明远',
-      builtRelationId: `${buildParams.value.scholarId}->${buildParams.value.enterpriseId}@0`,
-      relationType: '任职 / 顾问 / 项目合作',
+      status: 'success',
+      scholarId: scholar.id,
+      scholarName: scholar.name,
+      scholarTitle: scholar.title,
+      scholarInstitution: scholar.institution,
+      builtRelationId: relations[0].relationId,
+      relationType: relations[0].relationType,
       effective: true,
-      relations: [
-        { enterpriseId: 'ENT001', enterpriseName: '智谱科技有限公司', relationType: '任职' },
-        { enterpriseId: 'ENT002', enterpriseName: '星河智能装备股份有限公司', relationType: '顾问' },
-        { enterpriseId: 'ENT003', enterpriseName: '启明数据技术有限公司', relationType: '项目合作' },
-      ],
+      relations: relations.map((item) => ({
+        relationId: item.relationId,
+        enterpriseId: item.enterpriseId,
+        enterpriseName: item.enterpriseName,
+        relationType: item.relationType,
+        roleLabel: item.roleLabel,
+        roleLevel: item.roleLevel,
+        techField: item.techField,
+        period: item.period,
+        enterpriseBasic: item.enterpriseBasic,
+      })),
     }
     buildResult.value = data
     graphNodes.value = buildRadialGraph(
       `专家：${data.scholarName}`,
-      '科技专家',
+      `${data.scholarTitle}｜${data.scholarInstitution}`,
       data.relations.map((r) => ({
         title: `企业：${r.enterpriseName}`,
-        subtitle: '重点科技企业',
+        subtitle: `${r.enterpriseBasic}｜${r.techField}`,
         relation: r.relationType,
       })),
     )
   } else if (activeSub.value === 'annotate') {
+    const role = roleOption(annotateParams.value.roleType)
+    const enterprise = enterpriseById(annotateParams.value.relationId.includes('ENT002') ? 'ENT002' : annotateParams.value.relationId.includes('ENT003') ? 'ENT003' : 'ENT001')
+    const scholarId = annotateParams.value.relationId.split('->')[0] || buildParams.value.scholarId
+    const scholar = scholarProfiles[scholarId] ?? currentScholar()
     const data = {
+      status: 'success',
       relationId: annotateParams.value.relationId,
+      scholarName: scholar.name,
+      scholarInstitution: scholar.institution,
+      enterpriseName: enterprise.name,
+      enterpriseBasic: `${enterprise.orgType}｜${enterprise.province}${enterprise.city}｜${enterprise.listingStatus}`,
       roleType: annotateParams.value.roleType,
-      roleLabel: '首席科学家',
-      roleLevel: 'L1 核心角色',
+      roleLabel: role.label,
+      roleLevel: role.level,
       techField: annotateParams.value.techField,
       period: annotateParams.value.period,
+      cooperationMode: '顾问合作',
       annotated: true,
     }
     annotationResp.value = data
-    graphNodes.value = buildRadialGraph('专家：张明远', '科技专家', [
+    graphNodes.value = buildRadialGraph(`专家：${scholar.name}`, `${scholar.title}｜${scholar.institution}`, [
       {
-        title: '企业：智谱科技有限公司',
-        subtitle: data.techField,
-        relation: data.roleLabel,
+        title: `企业：${enterprise.name}`,
+        subtitle: `${data.roleLabel}｜${data.techField}｜${data.period.start}~${data.period.end}`,
+        relation: data.cooperationMode,
       },
     ])
   } else {
-    const data = {
-      enterpriseId: analyzeParams.value.enterpriseId,
-      enterpriseName: '智谱科技有限公司',
-      dimensions: {
-        industry_status: { available: true, conclusion: '国家级专精特新企业，处于智能计算平台头部梯队' },
-        core_tech: { available: true, conclusion: '布局知识图谱、大模型推理与智能决策平台' },
-        financial: { available: true, conclusion: '研发投入稳定增长，经营状况良好' },
+    const enterprise = enterpriseById(analyzeParams.value.enterpriseId)
+    const dimensions = {
+      industry_status: {
+        available: analyzeParams.value.analysisDimensions.includes('industry_status'),
+        facts: {
+          orgType: enterprise.orgType,
+          listingStatus: enterprise.listingStatus,
+          registeredCapital: enterprise.registeredCapital,
+          province: enterprise.province,
+          city: enterprise.city,
+          incorporationYear: enterprise.incorporationYear,
+          tags: enterprise.tags,
+          industryChains: enterprise.industryChains,
+          chainProducts: enterprise.mainProducts,
+        },
+        conclusion: `${enterprise.province}${enterprise.city}${enterprise.orgType}，上市状态：${enterprise.listingStatus}，处于${enterprise.industryChains[0]?.chain ?? '-'}产业链。`,
       },
-      patentDistribution: [
-        { cpcSection: 'G06N', count: 18 },
-        { cpcSection: 'G06F', count: 12 },
-      ],
-      coreTechLayout: '围绕知识图谱、智能计算、行业模型平台形成产业化布局',
+      core_tech: {
+        available: analyzeParams.value.analysisDimensions.includes('core_tech'),
+        facts: {
+          industryClass: enterprise.industryClass,
+          mainActivities: enterprise.mainActivities,
+          mainProducts: enterprise.mainProducts.join('、'),
+          patentCount: enterprise.patentCount,
+          patents: enterprise.patents,
+        },
+        conclusion: `主营${enterprise.mainProducts.join('、')}，相关专利 ${enterprise.patentCount} 项。`,
+      },
+      financial: {
+        available: analyzeParams.value.analysisDimensions.includes('financial'),
+        facts: { source: 'stock', ...enterprise.financial },
+        conclusion: `最近一期营业收入 ${formatMoney(enterprise.financial.operatingRevenue)}，净利润 ${formatMoney(enterprise.financial.pureProfit)}。`,
+      },
+    }
+    const data = {
+      status: 'success',
+      enterpriseId: enterprise.id,
+      enterpriseName: enterprise.name,
+      dimensions,
+      patentDistribution: enterprise.cpc.filter((item) => !analyzeParams.value.patentCPC.length || analyzeParams.value.patentCPC.some((code) => code.startsWith(item.cpcSection))),
+      coreTechLayout: enterprise.coreTechLayout,
     }
     analysisResp.value = data
     graphNodes.value = buildRadialGraph(
       `企业：${data.enterpriseName}`,
-      '重点科技企业',
-      Object.keys(data.dimensions).map((k) => ({
-        title: dimensionChinese[k] ?? k,
-        subtitle: '有数据',
-        relation: data.dimensions[k as keyof typeof data.dimensions].conclusion,
-      })),
+      `${enterprise.orgType}｜${enterprise.province}${enterprise.city}｜${enterprise.listingStatus}`,
+      Object.keys(data.dimensions)
+        .filter((k) => data.dimensions[k as keyof typeof data.dimensions].available)
+        .map((k) => ({
+          title: dimensionChinese[k] ?? k,
+          subtitle: k === 'financial' ? `营收${formatMoney(enterprise.financial.operatingRevenue)}｜研发${formatMoney(enterprise.financial.rdAmount)}` : data.dimensions[k as keyof typeof data.dimensions].conclusion,
+          relation: dimensionChinese[k] ?? k,
+        })),
     )
   }
   lastTestTime.value = new Date().toLocaleString('zh-CN', { hour12: false })
@@ -411,41 +637,38 @@ const detailRows = computed<(string | number)[][]>(() => {
     if (!r) return []
     const p = r.period ?? annotateParams.value.period
     return [
-      ['关系ID', r.relationId ?? annotateParams.value.relationId],
-      ['角色', r.roleLabel ?? '-'],
-      ['角色等级', r.roleLevel ?? '-'],
-      ['角色类型', r.roleType ?? annotateParams.value.roleType],
-      ['技术领域', r.techField ?? annotateParams.value.techField],
-      ['周期', `${p?.start ?? ''} ~ ${p?.end ?? ''}`],
-      ['标注结果', r.annotated ? '成功' : '失败'],
+      ['专家/人才名称', r.scholarName ?? '-'],
+      ['重点关注科技企业', r.enterpriseName ?? '-'],
+      ['专家角色', r.roleLabel ?? '-'],
+      ['合作领域', r.techField ?? annotateParams.value.techField],
+      ['合作时间', `${p?.start ?? ''} 至 ${p?.end ?? ''}`],
+      ['合作模式', r.cooperationMode ?? '顾问合作'],
     ]
   }
   if (activeSub.value === 'analyze') {
     const r = analysisResp.value
     if (!r) return []
-    const rows: (string | number)[][] = [['企业名称', r.enterpriseName ?? '-']]
+    const enterprise = enterpriseById(r.enterpriseId)
     const dims = r.dimensions ?? {}
-    Object.keys(dims).forEach((k) => {
-      const d = dims[k]
-      const label = dimensionChinese[k] ?? k
-      const value = d?.available ? d.conclusion ?? '-' : d?.summary ?? '-'
-      rows.push([label, value])
-    })
-    rows.push(['核心技术布局', r.coreTechLayout ?? '-'])
-    const dist = Array.isArray(r.patentDistribution) ? r.patentDistribution : []
-    dist.forEach((p: any) => rows.push([`CPC:${p.cpcSection ?? '-'}`, p.count ?? 0]))
-    return rows
+    return [
+      ['重点关注科技企业', r.enterpriseName ?? '-'],
+      ['行业地位', dims.industry_status?.conclusion ?? `${enterprise.province}${enterprise.city}${enterprise.orgType}，上市状态为${enterprise.listingStatus}。`],
+      ['技术方向', `${enterprise.mainActivities}，核心方向包括${enterprise.mainProducts.join('、')}。`],
+      ['经营状况', `最近一期营业收入 ${formatMoney(enterprise.financial.operatingRevenue)}，净利润 ${formatMoney(enterprise.financial.pureProfit)}，研发投入 ${formatMoney(enterprise.financial.rdAmount)}。`],
+    ]
   }
   const r = buildResult.value
   if (!r) return []
-  const rows: (string | number)[][] = [
-    ['专家', r.scholarName ?? r.scholarId ?? '-'],
-    ['专家ID', r.scholarId ?? '-'],
-  ]
   const rels = Array.isArray(r.relations) ? r.relations : []
-  rels.forEach((rel: any) =>
-    rows.push([rel.enterpriseName ?? rel.enterpriseId, rel.relationType ?? '-']),
-  )
+  const rows: (string | number)[][] = [
+    ['专家/人才名称', r.scholarName ?? r.scholarId ?? '-'],
+  ]
+  rels.forEach((rel: any, index: number) => {
+    rows.push(
+      [`重点关注企业名称${index + 1}`, rel.enterpriseName ?? rel.enterpriseId ?? '-'],
+      [`合作模式${index + 1}`, rel.relationType ?? '-'],
+    )
+  })
   return rows
 })
 
@@ -481,7 +704,7 @@ const apiExample = computed(() => {
             relations: [],
           }
   const data = activeResult.value ?? fallback
-  return JSON.stringify({ code: 200, data, message: 'success' }, null, 2)
+  return JSON.stringify({ code: 200, success: true, data, msg: 'success' }, null, 2)
 })
 
 const requestRows = computed<string[][]>(() => {
@@ -490,7 +713,7 @@ const requestRows = computed<string[][]>(() => {
       ['relationId', 'string', '是', '专家-企业关系边 ID'],
       ['roleType', 'string', '是', '专家在企业中的角色类型'],
       ['techField', 'string', '否', '合作领域或技术领域'],
-      ['period', 'object', '否', '合作时段，包含 start 和 end'],
+      ['cooperationMode', 'string', '否', '合作模式，如顾问合作'],
     ]
   }
   if (activeSub.value === 'analyze') {
@@ -514,10 +737,10 @@ const responseRows = computed<string[][]>(() => {
       ['data', 'object', '结果对象'],
       ['data.relationId', 'string', '政企关系ID'],
       ['data.roleType', 'string', '角色类型'],
-      ['data.roleLabel', 'string', '角色标签'],
-      ['data.roleLevel', 'string', '角色等级'],
-      ['data.techField', 'string', '技术领域'],
-      ['data.period', 'object', '合作时段'],
+      ['data.roleLabel', 'string', '专家角色'],
+      ['data.techField', 'string', '合作领域'],
+      ['data.period', 'object', '合作时间'],
+      ['data.cooperationMode', 'string', '合作模式'],
       ['data.annotated', 'boolean', '标注结果'],
       ['message', 'string', '返回消息'],
     ]
@@ -526,30 +749,20 @@ const responseRows = computed<string[][]>(() => {
     return [
       ['code', 'int', '业务状态码（200 成功）'],
       ['data', 'object', '结果对象'],
-      ['data.enterpriseId', 'string', '企业ID'],
-      ['data.enterpriseName', 'string', '企业名称'],
-      ['data.status', 'string', '处理状态'],
-      ['data.dimensions', 'object', '各维度分析'],
-      ['data.dimensions.industry_status', 'object', '行业地位分析维度'],
-      ['data.dimensions.core_tech', 'object', '核心技术分析维度'],
-      ['data.dimensions.financial', 'object', '经营财务分析维度'],
-      ['data.patentDistribution', 'array', '专利分布'],
-      ['data.coreTechLayout', 'string', '核心技术布局'],
+      ['data.enterpriseName', 'string', '重点关注科技企业名称'],
+      ['data.dimensions.industry_status.conclusion', 'string', '企业行业地位'],
+      ['data.dimensions.core_tech.conclusion', 'string', '企业技术方向'],
+      ['data.dimensions.financial.conclusion', 'string', '企业经营状况'],
       ['message', 'string', '返回消息'],
     ]
   }
   return [
     ['code', 'int', '业务状态码（200 成功）'],
     ['data', 'object', '结果对象'],
-    ['data.status', 'string', '处理状态'],
-    ['data.scholarId', 'string', '专家ID'],
-    ['data.scholarName', 'string', '专家姓名'],
-    ['data.builtRelationId', 'string', '构建的关系ID'],
-    ['data.relationType', 'string', '关系类型标签'],
-    ['data.effective', 'boolean', '生效标识'],
-    ['data.relations', 'array', '该专家全部企业关系'],
-    ['data.relations[].enterpriseName', 'string', '企业名称'],
-    ['data.relations[].relationType', 'string', '关系类型标签'],
+      ['data.scholarName', 'string', '专家/人才名称'],
+      ['data.relations', 'array', '关联重点关注科技企业'],
+      ['data.relations[].enterpriseName', 'string', '企业名称'],
+      ['data.relations[].relationType', 'string', '合作模式'],
     ['message', 'string', '返回消息'],
   ]
 })
@@ -558,7 +771,7 @@ const codeSamples = computed<Record<string, string>>(() => {
   const url = apiPath.value
   const payload =
     activeSub.value === 'annotate'
-      ? JSON.stringify(annotateParams.value, null, 2)
+      ? JSON.stringify({ ...annotateParams.value, cooperationMode: '顾问合作' }, null, 2)
       : activeSub.value === 'analyze'
         ? JSON.stringify(analyzeParams.value, null, 2)
         : JSON.stringify(buildParams.value, null, 2)
@@ -581,6 +794,25 @@ console.log(await res.json());`,
   -d '${payload.replace(/\s+/g, ' ')}'`,
   }
 })
+
+const highlightedApiExample = computed(() => highlightCode(apiExample.value))
+const highlightedCodeSample = computed(() => highlightCode(codeSamples.value[activeCode.value]))
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function highlightCode(value: string) {
+  return escapeHtml(value)
+    .replace(/("(?:\\.|[^"\\])*")(?=\s*:)/g, '<span class="code-token code-token--key">$1</span>')
+    .replace(/(:\s*)("(?:\\.|[^"\\])*")/g, '$1<span class="code-token code-token--string">$2</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="code-token code-token--literal">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="code-token code-token--number">$1</span>')
+    .replace(/\b(import|const|await|fetch|print|response|payload|url|curl|POST|JSON|headers|requests)\b/g, '<span class="code-token code-token--keyword">$1</span>')
+}
 
 async function handleCopyCode() {
   try {
@@ -746,7 +978,7 @@ watch(activeSub, () => {
             </div>
           </dl>
           <div v-else-if="resultTab === 'structured'" class="result-empty">暂无结果，请先执行测试</div>
-          <pre v-else class="result-panel__code scroll-on-demand">{{ apiExample }}</pre>
+          <pre v-else class="result-panel__code scroll-on-demand" v-html="highlightedApiExample"></pre>
         </section>
       </aside>
     </div>
@@ -813,7 +1045,7 @@ watch(activeSub, () => {
           <span v-if="copied" aria-hidden="true">✓</span>
           <img v-else :src="iconCopy" alt="" aria-hidden="true" />
         </button>
-        <pre class="scroll-on-demand">{{ codeSamples[activeCode] }}</pre>
+        <pre class="scroll-on-demand" v-html="highlightedCodeSample"></pre>
       </section>
     </section>
 
@@ -842,28 +1074,13 @@ watch(activeSub, () => {
               </select>
               <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
             </label>
-            <div class="config-multi">
+            <label>
               <span><i>*</i>relationTypes</span>
-              <div class="ms-field">
-                <select
-                  class="ms-add"
-                  @change="pushMulti('relationTypes', ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''"
-                >
-                  <option value="" disabled selected>请选择（可多选，每选一项加一条）</option>
-                  <option v-for="r in options.relationTypes" :key="r.value" :value="r.value">{{ r.label }}</option>
-                </select>
-                <div class="ms-tags">
-                  <span
-                    v-for="r in selectedItems(buildParams.relationTypes, options.relationTypes)"
-                    :key="r.value"
-                    class="ms-tag"
-                  >
-                    {{ r.label
-                    }}<button type="button" class="ms-tag-x" @click="removeMulti('relationTypes', r.value ?? '')">×</button>
-                  </span>
-                </div>
-              </div>
-            </div>
+              <select v-model="buildParams.relationTypes[0]">
+                <option v-for="r in options.relationTypes" :key="r.value" :value="r.value">{{ r.label }}</option>
+              </select>
+              <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
+            </label>
           </template>
 
           <template v-else-if="activeSub === 'annotate'">
@@ -888,8 +1105,14 @@ watch(activeSub, () => {
               </select>
               <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
             </label>
-            <label><span><i></i>period.start</span><input v-model="annotateParams.period.start" placeholder="2021-01-01" /></label>
-            <label><span><i></i>period.end</span><input v-model="annotateParams.period.end" placeholder="2024-12-31" /></label>
+            <label>
+              <span><i></i>period.start</span>
+              <input v-model="annotateParams.period.start" type="date" />
+            </label>
+            <label>
+              <span><i></i>period.end</span>
+              <input v-model="annotateParams.period.end" type="date" />
+            </label>
           </template>
 
           <template v-else>
@@ -900,45 +1123,20 @@ watch(activeSub, () => {
               </select>
               <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
             </label>
-            <div class="config-multi">
+            <label>
               <span><i>*</i>analysisDimensions</span>
-              <div class="ms-field">
-                <select
-                  class="ms-add"
-                  @change="pushMulti('analysisDimensions', ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''"
-                >
-                  <option value="" disabled selected>请选择（可多选，每选一项加一条）</option>
-                  <option v-for="d in options.dimensions" :key="d.value" :value="d.value">{{ d.label }}</option>
-                </select>
-                <div class="ms-tags">
-                  <span
-                    v-for="d in selectedItems(analyzeParams.analysisDimensions, options.dimensions)"
-                    :key="d.value"
-                    class="ms-tag"
-                  >
-                    {{ d.label
-                    }}<button type="button" class="ms-tag-x" @click="removeMulti('analysisDimensions', d.value ?? '')">×</button>
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div class="config-multi">
+              <select v-model="analyzeParams.analysisDimensions[0]">
+                <option v-for="d in options.dimensions" :key="d.value" :value="d.value">{{ d.label }}</option>
+              </select>
+              <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
+            </label>
+            <label>
               <span><i></i>patentCPC</span>
-              <div class="ms-field">
-                <select
-                  class="ms-add"
-                  @change="pushMulti('patentCPC', ($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''"
-                >
-                  <option value="" disabled selected>请选择（可多选，每选一项加一条）</option>
-                  <option v-for="c in options.cpcCodes" :key="c" :value="c">{{ c }}</option>
-                </select>
-                <div class="ms-tags">
-                  <span v-for="c in analyzeParams.patentCPC" :key="c" class="ms-tag">
-                    {{ c }}<button type="button" class="ms-tag-x" @click="removeMulti('patentCPC', c)">×</button>
-                  </span>
-                </div>
-              </div>
-            </div>
+              <select v-model="analyzeParams.patentCPC[0]">
+                <option v-for="c in options.cpcCodes" :key="c" :value="c">{{ c }}</option>
+              </select>
+              <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
+            </label>
           </template>
         </div>
         <footer class="modal__footer">
@@ -1069,6 +1267,9 @@ watch(activeSub, () => {
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-primary);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: none;
 }
 
 .select-with-icon {
@@ -1240,6 +1441,7 @@ watch(activeSub, () => {
   z-index: 2;
   display: grid;
   align-content: center;
+  padding: 10px 18px;
   border-radius: 9px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(246, 251, 255, 0.95));
   cursor: grab;
@@ -1264,41 +1466,45 @@ watch(activeSub, () => {
 
 .expert-node strong {
   color: #1663e8;
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .expert-node span {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #24466f;
-  font-size: 19px;
+  font-size: 16px;
+  line-height: 1.35;
 }
 
 .company-node {
   border: 1px solid #76cf8e;
   background: linear-gradient(180deg, #f7fff8, #effaf2);
-  padding: 0 20px;
 }
 
 .company-node strong {
   color: var(--graph-green);
-  font-size: 22px;
+  font-size: 18px;
+  line-height: 1.3;
 }
 
 .company-node span {
-  margin-top: 8px;
+  margin-top: 6px;
   color: #314662;
-  font-size: 18px;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .relation-label {
   position: absolute;
   z-index: 5;
+  transform: translate(-50%, -50%);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.88);
-  padding: 2px 8px;
-  font-size: 22px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 3px 10px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
+  white-space: nowrap;
   pointer-events: none;
 }
 
@@ -1388,12 +1594,31 @@ watch(activeSub, () => {
   padding: var(--space-16) 24px;
   overflow: auto;
   overscroll-behavior: contain;
-  color: #52c41a;
+  color: #2f3442;
   background: var(--surface);
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
   line-height: 24px;
   white-space: pre-wrap;
+}
+
+.result-panel__code :deep(.code-token--key),
+.result-panel__code :deep(.code-token--keyword),
+.developer-code pre :deep(.code-token--key),
+.developer-code pre :deep(.code-token--keyword) {
+  color: #7c3aed;
+}
+
+.result-panel__code :deep(.code-token--string),
+.developer-code pre :deep(.code-token--string) {
+  color: #047857;
+}
+
+.result-panel__code :deep(.code-token--number),
+.result-panel__code :deep(.code-token--literal),
+.developer-code pre :deep(.code-token--number),
+.developer-code pre :deep(.code-token--literal) {
+  color: #d97706;
 }
 
 .developer-view {
@@ -1568,9 +1793,9 @@ watch(activeSub, () => {
   margin: 0;
   padding: var(--space-16) 32px;
   overflow: auto;
-  color: #95c47a;
+  color: #2f3442;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
   font-size: 13px;
-  line-height: 24px;
   white-space: pre;
 }
 
@@ -1611,7 +1836,7 @@ watch(activeSub, () => {
 }
 
 .modal--config {
-  width: 560px;
+  width: 520px;
 }
 
 .modal--tech {
@@ -1693,13 +1918,13 @@ watch(activeSub, () => {
 
 .config-form {
   display: grid;
-  gap: var(--space-16);
+  gap: var(--space-12);
 }
 
 .config-form label {
   position: relative;
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 118px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-8);
 }
@@ -1722,7 +1947,7 @@ watch(activeSub, () => {
 
 .config-multi {
   display: grid;
-  grid-template-columns: 96px 1fr;
+  grid-template-columns: 82px minmax(0, 1fr);
   align-items: start;
   gap: var(--space-8);
 }
@@ -1739,15 +1964,27 @@ watch(activeSub, () => {
   flex-direction: column;
 }
 
+.ms-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.ms-select-wrap .select-icon {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .ms-add {
   width: 100%;
   height: var(--control-height);
-  padding: 0 var(--space-12);
+  padding: 0 34px 0 var(--space-12);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text-primary);
   font-size: 14px;
+  appearance: none;
 }
 
 .ms-tags {

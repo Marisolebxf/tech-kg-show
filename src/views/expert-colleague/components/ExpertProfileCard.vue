@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 import type { ExpertProfile } from '../types'
 import type { ColleagueInferenceResult } from '../types'
 
-defineProps<{
+const props = defineProps<{
   profile: ExpertProfile
   result: ColleagueInferenceResult
   resultMode: 'structured' | 'api'
@@ -11,6 +13,39 @@ defineProps<{
 const emit = defineEmits<{
   'update:resultMode': [value: 'structured' | 'api']
 }>()
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function highlightCode(value: string) {
+  return escapeHtml(value)
+    .replace(/("(?:\\.|[^"\\])*")(?=\s*:)/g, '<span class="code-token code-token--key">$1</span>')
+    .replace(/(:\s*)("(?:\\.|[^"\\])*")/g, '$1<span class="code-token code-token--string">$2</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="code-token code-token--literal">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="code-token code-token--number">$1</span>')
+}
+
+const apiExampleText = computed(() => JSON.stringify({
+  from: props.result.expertA.name,
+  to: props.result.expertB.name,
+  organization: props.result.organization,
+  period: {
+    start: '2018.03',
+    end: '2022.12',
+  },
+  collaboration: {
+    paper: props.result.collaborations.paper,
+    patent: props.result.collaborations.patent,
+    project: props.result.collaborations.project,
+  },
+  status: 'success',
+}, null, 2))
+
+const highlightedApiExampleText = computed(() => highlightCode(apiExampleText.value))
 </script>
 
 <template>
@@ -73,21 +108,7 @@ const emit = defineEmits<{
         </dd>
       </div>
     </dl>
-    <pre v-else class="profile-card__code">{
-  "from": "{{ result.expertA.name }}",
-  "to": "{{ result.expertB.name }}",
-  "organization": "{{ result.organization }}",
-  "period": {
-    "start": "2018.03",
-    "end": "2022.12"
-  },
-  "collaboration": {
-    "paper": {{ result.collaborations.paper }},
-    "patent": {{ result.collaborations.patent }},
-    "project": {{ result.collaborations.project }}
-  },
-  "status": "success"
-}</pre>
+    <pre v-else class="profile-card__code" v-html="highlightedApiExampleText"></pre>
   </section>
 </template>
 
@@ -175,5 +196,17 @@ const emit = defineEmits<{
   font-size: 13px;
   line-height: 24px;
   white-space: pre-wrap;
+}
+.profile-card__code :deep(.code-token--key) {
+  color: #7c3aed;
+}
+
+.profile-card__code :deep(.code-token--string) {
+  color: #047857;
+}
+
+.profile-card__code :deep(.code-token--number),
+.profile-card__code :deep(.code-token--literal) {
+  color: #d97706;
 }
 </style>

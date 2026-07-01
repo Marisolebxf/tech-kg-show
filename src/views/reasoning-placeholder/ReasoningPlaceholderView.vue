@@ -31,11 +31,212 @@ const indirectErrorMessage = ref('')
 const activeAchievementCombo = ref<'expertAId' | 'expertBId' | 'achievementTypes' | null>(null)
 const achievementErrorMessage = ref('')
 const activeGenericCombo = ref<string | null>(null)
+const activeIndustryCombo = ref<string | null>(null)
 const genericParams = ref<Record<string, string>>({})
+
+function isDateFieldName(fieldName: string) {
+  return /(^|_)(start|end)_?time$/i.test(fieldName) || /^(start|end)Time$/.test(fieldName) || fieldName.includes('Time') || fieldName.includes('_time')
+}
 
 function defaultInterfaceIndex(routeName: string) {
   return routeName === 'expert-alumni' ? 1 : 0
 }
+
+type IndustryChainLink = {
+  id: string
+  name: string
+  level: number
+  technologies: string[]
+  enterprises: string[]
+  experts: string[]
+  products: string[]
+  patents: number
+  news: string[]
+}
+
+type IndustryChainSeed = {
+  code: string
+  name: string
+  path: string
+  links: IndustryChainLink[]
+  relations: Array<{ from: string; to: string; type: string; strength: number; dataFlow: string }>
+}
+
+const industryChainForm = reactive({
+  chain_code: 'AI',
+  chain_name: '人工智能',
+  node_id: 'all',
+  node_name: '全部环节',
+  level: '3',
+  relation_type: '全部',
+  include_enterprise: 'true',
+  include_expert: 'true',
+  include_patent: 'true',
+  include_product: 'true',
+  include_news: 'true',
+  limit: '50',
+})
+
+const industryChainSeeds: Record<string, IndustryChainSeed> = {
+  AI: {
+    code: 'AI',
+    name: '人工智能',
+    path: '人工智能 / 算力基础 / 大模型 / 行业应用',
+    links: [
+      { id: 'ai-up', name: '上游基础资源', level: 1, technologies: ['数据治理', '算力芯片', '向量数据库'], enterprises: ['寒武纪', '阿里云', '华为昇腾'], experts: ['李佳宁', '张明远'], products: ['训练数据集', 'AI服务器'], patents: 18, news: ['智算中心扩容', '国产算力适配'] },
+      { id: 'ai-core', name: '中游核心技术', level: 2, technologies: ['知识图谱', '机器学习', '大模型'], enterprises: ['百度智能云', '智谱AI', '商汤科技'], experts: ['周欣怡', '王启航'], products: ['大模型平台', '图谱推理引擎'], patents: 26, news: ['多模态模型升级', '产业合作发布'] },
+      { id: 'ai-down', name: '下游应用场景', level: 3, technologies: ['智能制造', '智慧医疗', '自动驾驶'], enterprises: ['科大讯飞', '旷视科技', '中科创达'], experts: ['陈思远', '赵清宁'], products: ['工业质检系统', '智能问诊助手'], patents: 14, news: ['行业大模型落地', '场景应用示范'] },
+    ],
+    relations: [
+      { from: '上游基础资源', to: '中游核心技术', type: '算力与数据供给', strength: 94, dataFlow: '数据集 / 算力指标 / 模型训练日志' },
+      { from: '中游核心技术', to: '下游应用场景', type: '模型能力输出', strength: 91, dataFlow: 'API服务 / 推理结果 / 行业知识库' },
+      { from: '下游应用场景', to: '中游核心技术', type: '场景反馈', strength: 82, dataFlow: '用户行为 / 质检样本 / 效果评估' },
+    ],
+  },
+  ROBOT: {
+    code: 'ROBOT',
+    name: '机器人',
+    path: '机器人 / 关键零部件 / 控制系统 / 场景应用',
+    links: [
+      { id: 'robot-up', name: '上游关键零部件', level: 1, technologies: ['传感器', '伺服电机', '减速器'], enterprises: ['汇川技术', '绿的谐波', '奥比中光'], experts: ['陈建国', '韩思远'], products: ['六维力传感器', '高精度减速器'], patents: 21, news: ['核心零部件国产化', '高精度传感升级'] },
+      { id: 'robot-core', name: '中游控制系统', level: 2, technologies: ['运动控制', '具身智能', '多模态感知'], enterprises: ['优必选', '傅利叶智能', '节卡机器人'], experts: ['刘芳', '王启航'], products: ['机器人控制器', '灵巧手系统'], patents: 29, news: ['灵巧手控制突破', '具身智能平台发布'] },
+      { id: 'robot-down', name: '下游工业场景', level: 3, technologies: ['工业巡检', '康复医疗', '物流分拣'], enterprises: ['新松机器人', '极智嘉', '达闼机器人'], experts: ['赵清宁', '林远航'], products: ['巡检机器人', '协作机械臂'], patents: 16, news: ['工厂试点扩容', '康复机器人入院'] },
+    ],
+    relations: [
+      { from: '上游关键零部件', to: '中游控制系统', type: '硬件供给', strength: 92, dataFlow: '传感数据 / 控制参数 / 零部件指标' },
+      { from: '中游控制系统', to: '下游工业场景', type: '系统集成', strength: 89, dataFlow: '控制指令 / 运动轨迹 / 任务日志' },
+      { from: '下游工业场景', to: '中游控制系统', type: '运行反馈', strength: 80, dataFlow: '故障记录 / 环境样本 / 作业效率' },
+    ],
+  },
+  BIO: {
+    code: 'BIO',
+    name: '生物医药',
+    path: '生物医药 / 靶点发现 / 临床前评价 / 产业转化',
+    links: [
+      { id: 'bio-up', name: '上游实验资源', level: 1, technologies: ['多组学数据', '高通量筛选', '实验动物模型'], enterprises: ['华大智造', '药明康德', '金域医学'], experts: ['周子谦', '何嘉禾'], products: ['组学数据库', '筛选试剂盒'], patents: 17, news: ['多组学平台升级', '样本库扩容'] },
+      { id: 'bio-core', name: '中游靶点发现', level: 2, technologies: ['药物筛选', 'AI制药', '靶点验证'], enterprises: ['晶泰科技', '英矽智能', '百图生科'], experts: ['吴若彤', '林远航'], products: ['AI筛选平台', '候选化合物库'], patents: 24, news: ['靶点验证突破', '候选药物推进'] },
+      { id: 'bio-down', name: '下游临床转化', level: 3, technologies: ['临床前评价', '药物递送', '伴随诊断'], enterprises: ['恒瑞医药', '君实生物', '复星医药'], experts: ['顾雨辰', '陈思远'], products: ['临床评价方案', '递送载体'], patents: 13, news: ['转化平台升级', '联合临床研究'] },
+    ],
+    relations: [
+      { from: '上游实验资源', to: '中游靶点发现', type: '实验数据供给', strength: 90, dataFlow: '组学数据 / 样本标签 / 筛选结果' },
+      { from: '中游靶点发现', to: '下游临床转化', type: '候选方案输出', strength: 87, dataFlow: '候选靶点 / 化合物结构 / 安全性报告' },
+      { from: '下游临床转化', to: '中游靶点发现', type: '临床反馈', strength: 78, dataFlow: '疗效指标 / 不良反应 / 入组特征' },
+    ],
+  },
+  QUANTUM: {
+    code: 'QUANTUM',
+    name: '量子信息',
+    path: '量子信息 / 低温设备 / 量子计算 / 安全通信',
+    links: [
+      { id: 'quantum-up', name: '上游低温设备', level: 1, technologies: ['稀释制冷', '低噪声测控', '超导材料'], enterprises: ['国盾量子', '中船鹏力', '中科酷原'], experts: ['韩思远', '李明哲'], products: ['低温制冷机', '量子测控线缆'], patents: 12, news: ['低温设备国产替代', '测控链路优化'] },
+      { id: 'quantum-core', name: '中游量子计算', level: 2, technologies: ['量子芯片', '量子算法', '量子纠错'], enterprises: ['本源量子', '玻色量子', '量旋科技'], experts: ['张明远', '王启航'], products: ['量子计算云平台', '超导量子芯片'], patents: 20, news: ['量子芯片突破', '云平台开放'] },
+      { id: 'quantum-down', name: '下游安全通信', level: 3, technologies: ['量子密钥分发', '量子传感', '量子测量'], enterprises: ['科大国盾', '问天量子', '华为云'], experts: ['周欣怡', '赵清宁'], products: ['量子保密通信终端', '量子传感器'], patents: 11, news: ['城域网应用示范', '传感场景验证'] },
+    ],
+    relations: [
+      { from: '上游低温设备', to: '中游量子计算', type: '设备支撑', strength: 88, dataFlow: '低温参数 / 噪声指标 / 芯片测试数据' },
+      { from: '中游量子计算', to: '下游安全通信', type: '能力转化', strength: 84, dataFlow: '算法服务 / 密钥分发策略 / 测量结果' },
+      { from: '下游安全通信', to: '中游量子计算', type: '应用反馈', strength: 76, dataFlow: '链路稳定性 / 误码率 / 场景需求' },
+    ],
+  },
+}
+
+const industryChainOptions = computed(() => {
+  const chainCodes = Object.keys(industryChainSeeds)
+  const seed = industryChainSeeds[industryChainForm.chain_code] ?? industryChainSeeds.AI
+  return {
+    chain_code: chainCodes,
+    chain_name: chainCodes.map((code) => industryChainSeeds[code].name),
+    node_id: ['all', ...seed.links.map((link) => link.id)],
+    node_name: ['全部环节', ...seed.links.map((link) => link.name)],
+    level: ['1', '2', '3'],
+    relation_type: ['全部', '上下游关系', '应用反馈'],
+    include_enterprise: ['true', 'false'],
+    include_expert: ['true', 'false'],
+    include_patent: ['true', 'false'],
+    include_product: ['true', 'false'],
+    include_news: ['true', 'false'],
+    limit: ['20', '50', '100'],
+  }
+})
+
+const industryChainNameToCode = computed(() => Object.fromEntries(Object.values(industryChainSeeds).map((seed) => [seed.name, seed.code])))
+
+type IndustryEventItem = {
+  id: string
+  industryChainNode: string
+  eventType: string
+  title: string
+  eventTime: string
+  score: number
+  expert: string
+  talentRole: string
+  enterprise: string
+  enterpriseRole: string
+  cooperationField: string
+  cooperationTime: string
+  cooperationMode: string
+  industryStatus: string
+  techDirection: string
+  businessStatus: string
+  impact: string
+  trend: string
+}
+
+const industryEventForm = reactive({
+  industryChainNode: '上游原材料',
+  eventTypes: '全部',
+  topN: '5',
+  evaluationModel: 'multi_factor',
+  startTime: '2020-01-01',
+  endTime: '2024-12-31',
+})
+
+const industryEventOptions = {
+  industryChainNode: ['上游原材料', '中游核心技术', '下游应用场景', '关键零部件', '产业转化节点'],
+  eventTypes: ['全部', 'patent', 'paper', 'fund', 'project', 'policy', 'product'],
+  topN: ['3', '5', '10', '20'],
+  evaluationModel: ['multi_factor', 'expert_enterprise_influence', 'industry_chain_impact', 'growth_trend'],
+  startTime: ['2019-01-01', '2020-01-01', '2021-01-01', '2022-01-01'],
+  endTime: ['2023-12-31', '2024-12-31', '2025-12-31', '2026-12-31'],
+}
+
+const industryEventTypeNames: Record<string, string> = {
+  全部: '全部事件',
+  patent: '专利突破',
+  paper: '论文成果',
+  fund: '融资并购',
+  project: '重大项目',
+  policy: '政策试点',
+  product: '产品发布',
+}
+
+const industryEventModelNames: Record<string, string> = {
+  multi_factor: '多因子综合评估',
+  expert_enterprise_influence: '专家企业影响力评估',
+  industry_chain_impact: '产业链影响评估',
+  growth_trend: '成长趋势评估',
+}
+
+function formatIndustryEventType(value: string) {
+  return industryEventTypeNames[value] ?? value
+}
+
+function formatIndustryEventModel(value: string) {
+  return industryEventModelNames[value] ?? value
+}
+
+const industryEventItems: IndustryEventItem[] = [
+  { id: 'evt-mat-01', industryChainNode: '上游原材料', eventType: 'patent', title: '高纯前驱体材料制备专利授权', eventTime: '2024-06-15', score: 96.2, expert: '陈建国', talentRole: '首席科学顾问', enterprise: '华材科技', enterpriseRole: '联合研发单位', cooperationField: '高纯材料制备', cooperationTime: '2022-03 至 2024-06', cooperationMode: '联合实验室 + 专利共研', industryStatus: '细分材料国产替代龙头', techDirection: '高纯前驱体与材料缺陷控制', businessStatus: '订单增长，产线扩建中', impact: '提升上游材料自给率，降低中游制造成本', trend: '进入中试放大与客户验证阶段' },
+  { id: 'evt-mat-02', industryChainNode: '上游原材料', eventType: 'fund', title: '战略融资投向低碳原材料产线', eventTime: '2024-03-20', score: 89.4, expert: '李佳宁', talentRole: '技术尽调专家', enterprise: '源材新能', enterpriseRole: '产业化主体', cooperationField: '低碳原材料', cooperationTime: '2023-01 至 2024-03', cooperationMode: '技术评估 + 产线规划', industryStatus: '区域供应链核心企业', techDirection: '低碳合成与质量追溯', businessStatus: '融资完成，新增产能建设', impact: '增强上游供给稳定性', trend: '与中游头部企业签订长协' },
+  { id: 'evt-mat-03', industryChainNode: '上游原材料', eventType: 'paper', title: '材料缺陷预测模型论文发表', eventTime: '2023-11-08', score: 85.7, expert: '周欣怡', talentRole: '通讯作者', enterprise: '华材科技', enterpriseRole: '数据合作方', cooperationField: '材料计算与质量检测', cooperationTime: '2021-09 至 2023-11', cooperationMode: '企业数据 + 高校建模', industryStatus: '质量检测数据优势企业', techDirection: 'AI 材料表征', businessStatus: '检测服务收入提升', impact: '缩短材料研发迭代周期', trend: '模型将嵌入在线质检系统' },
+  { id: 'evt-core-01', industryChainNode: '中游核心技术', eventType: 'project', title: '图谱推理引擎联合攻关项目验收', eventTime: '2024-09-18', score: 95.1, expert: '张明远', talentRole: '项目负责人', enterprise: '智谱云图', enterpriseRole: '平台共建企业', cooperationField: '知识图谱推理', cooperationTime: '2022-06 至 2024-09', cooperationMode: '联合课题组 + 平台共建', industryStatus: '知识智能平台头部企业', techDirection: '大规模图谱推理与模型融合', businessStatus: '客户数持续增长，经营稳健', impact: '强化中游技术供给能力，带动应用侧适配', trend: '向行业专用模型和实时推理扩展' },
+  { id: 'evt-core-02', industryChainNode: '中游核心技术', eventType: 'product', title: '行业大模型平台发布', eventTime: '2024-05-12', score: 91.6, expert: '王启航', talentRole: '架构顾问', enterprise: '百度智能云', enterpriseRole: '产品发布主体', cooperationField: '行业大模型与图谱增强', cooperationTime: '2023-02 至 2024-05', cooperationMode: '顾问咨询 + 场景验证', industryStatus: '云与 AI 平台领先企业', techDirection: '多模态大模型与知识增强', businessStatus: '云业务稳步增长', impact: '提升下游应用开发效率', trend: '扩大制造、医疗、政务场景落地' },
+  { id: 'evt-core-03', industryChainNode: '中游核心技术', eventType: 'patent', title: '图谱向量混合检索专利公开', eventTime: '2023-12-22', score: 87.9, expert: '李明哲', talentRole: '联合发明人', enterprise: '智谱云图', enterpriseRole: '专利申请人', cooperationField: '混合检索', cooperationTime: '2022-10 至 2023-12', cooperationMode: '联合发明 + 工程验证', industryStatus: '创新型平台企业', techDirection: '向量检索与符号推理融合', businessStatus: '研发投入加大', impact: '提升图谱查询召回与解释能力', trend: '形成可复用底层组件' },
+  { id: 'evt-down-01', industryChainNode: '下游应用场景', eventType: 'policy', title: '智能制造场景应用示范入选', eventTime: '2024-07-05', score: 90.8, expert: '陈思远', talentRole: '评审专家', enterprise: '科大讯飞', enterpriseRole: '示范应用单位', cooperationField: '工业质检与知识问答', cooperationTime: '2023-04 至 2024-07', cooperationMode: '专家评审 + 场景试点', industryStatus: '智能语音与行业 AI 领军企业', techDirection: '工业质检大模型', businessStatus: '行业解决方案放量', impact: '拉动下游应用生态建设', trend: '复制到更多离散制造场景' },
+  { id: 'evt-down-02', industryChainNode: '下游应用场景', eventType: 'product', title: '智能问诊助手完成多院部署', eventTime: '2024-02-28', score: 86.5, expert: '赵清宁', talentRole: '临床转化顾问', enterprise: '医智云', enterpriseRole: '应用落地主体', cooperationField: '智慧医疗应用', cooperationTime: '2022-12 至 2024-02', cooperationMode: '医工协同 + 试点部署', industryStatus: '医疗 AI 成长型企业', techDirection: '医学知识图谱与问诊大模型', businessStatus: '试点医院增加，收入爬坡', impact: '验证下游商业化路径', trend: '推进医保控费和专科助手场景' },
+  { id: 'evt-part-01', industryChainNode: '关键零部件', eventType: 'project', title: '高精度传感器国产化项目启动', eventTime: '2024-04-10', score: 92.3, expert: '韩思远', talentRole: '技术负责人', enterprise: '奥比中光', enterpriseRole: '核心零部件企业', cooperationField: '三维视觉传感', cooperationTime: '2023-08 至 2024-04', cooperationMode: '联合攻关 + 样机验证', industryStatus: '视觉传感器重点企业', techDirection: '高精度三维感知', businessStatus: '新产品导入客户验证', impact: '补强关键零部件短板', trend: '向机器人和低空设备延伸' },
+  { id: 'evt-transfer-01', industryChainNode: '产业转化节点', eventType: 'fund', title: '成果转化基金支持联合实验室', eventTime: '2024-08-16', score: 88.2, expert: '林远航', talentRole: '转化顾问', enterprise: '启明生物科技', enterpriseRole: '成果承接企业', cooperationField: 'AI 制药转化', cooperationTime: '2023-05 至 2024-08', cooperationMode: '基金支持 + 企业孵化', industryStatus: '生物医药创新企业', techDirection: '靶点发现与候选药物筛选', businessStatus: '研发管线推进，现金流充足', impact: '加速科研成果从实验室走向产业', trend: '进入临床前评价和商务合作阶段' },
+]
 
 type IndirectRelationItem = {
   key: string
@@ -215,11 +416,14 @@ const achievementSeeds: Record<string, AchievementExpertSeed> = {
 const moduleInfo = computed(() => getPrototypeModule(String(route.name ?? 'node-indirect')))
 const isIndirectModule = computed(() => String(route.name ?? '') === 'node-indirect')
 const isAchievementModule = computed(() => String(route.name ?? '') === 'two-point-achievement')
+const isIndustryChainEventModule = computed(() => String(route.name ?? '') === 'industry-chain-event')
+const isIndustryChainPanoramaModule = computed(() => String(route.name ?? '') === 'industry-chain-panorama' || currentInterface.value.endpoint === '/api/industry-chain/panorama/infer')
 const title = computed(() => moduleInfo.value.title || String(route.meta.title ?? '知识推理模块'))
 const baseInterface = computed(() => moduleInfo.value.interfaces[activeInterfaceIndex.value] ?? moduleInfo.value.interfaces[0])
 const sampleScenarios = computed(() => buildSampleScenarios(String(route.name ?? ''), baseInterface.value.name))
 const activeScenario = computed(() => sampleScenarios.value[activeSampleIndex.value] ?? sampleScenarios.value[0])
 const currentInterface = computed(() => applyScenario(baseInterface.value, activeScenario.value.replacements))
+const isIndustryChainEventScreenInterface = computed(() => isIndustryChainEventModule.value && activeInterfaceIndex.value === 0)
 const requestJson = computed(() => JSON.stringify(currentInterface.value.requestExample, null, 2))
 const normalizedResponseExample = computed(() => {
   const example = currentInterface.value.responseExample
@@ -238,6 +442,36 @@ const activeErrorMessage = computed(() => {
   if (isAchievementModule.value) return achievementErrorMessage.value
   if (isIndirectModule.value) return indirectErrorMessage.value
   return ''
+})
+const industryEventFilteredItems = computed(() => {
+  const topN = Number(industryEventForm.topN) || 5
+  return industryEventItems
+    .filter((item) => item.industryChainNode === industryEventForm.industryChainNode)
+    .filter((item) => industryEventForm.eventTypes === '全部' || item.eventType === industryEventForm.eventTypes)
+    .filter((item) => item.eventTime >= industryEventForm.startTime && item.eventTime <= industryEventForm.endTime)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, topN)
+})
+const industryEventDetailRows = computed<Array<[string, string | string[]]>>(() => {
+  const items = industryEventFilteredItems.value
+  const primary = items[0]
+  if (!primary) {
+    return [
+      ['产业链节点', industryEventForm.industryChainNode],
+      ['事件类型', formatIndustryEventType(industryEventForm.eventTypes)],
+      ['时间范围', `${industryEventForm.startTime} 至 ${industryEventForm.endTime}`],
+      ['结果状态', '当前参数下暂无匹配事件'],
+    ]
+  }
+
+  return [
+    ['产业链节点', industryEventForm.industryChainNode],
+    ['事件类型', industryEventForm.eventTypes === '全部' ? '专利事件、论文事件、基金事件' : formatIndustryEventType(industryEventForm.eventTypes)],
+    ['时间范围', `${industryEventForm.startTime} 至 ${industryEventForm.endTime}`],
+    ['评估模型', formatIndustryEventModel(industryEventForm.evaluationModel)],
+    ['TOP-N核心事件', items.map((item, index) => `TOP${index + 1}：${item.title}｜${formatIndustryEventType(item.eventType)}｜影响力评分 ${item.score.toFixed(1)}`)],
+    ['评分因素', '引用次数、事件级别、时效性、产业链相关度'],
+  ]
 })
 const indirectCoreExpert = computed(() => indirectExpertSeeds[indirectForm.corenode_id.trim()] ?? null)
 const indirectItems = computed(() => {
@@ -321,11 +555,15 @@ const indirectGraph = computed(() => {
   }
 })
 const activeGraph = computed(() => {
+  if (isIndustryChainEventScreenInterface.value) return industryEventGraph.value
+  if (isIndustryChainPanoramaModule.value) return industryChainGraph.value
   if (isAchievementModule.value) return achievementGraph.value
   if (isIndirectModule.value) return indirectGraph.value
   return currentInterface.value.graph
 })
 const activeDetailRows = computed(() => {
+  if (isIndustryChainEventScreenInterface.value) return industryEventDetailRows.value
+  if (isIndustryChainPanoramaModule.value) return industryChainDetailRows.value
   if (isAchievementModule.value) return achievementDetailRows.value
   if (isIndirectModule.value) return indirectDetailRows.value
   return currentInterface.value.detailRows
@@ -363,11 +601,15 @@ const indirectResponseExample = computed(() => ({
 }))
 const currentResponseJson = computed(() =>
   JSON.stringify(
-    isAchievementModule.value
-      ? achievementResponseExample.value
-      : isIndirectModule.value
-        ? indirectResponseExample.value
-        : normalizedResponseExample.value,
+    isIndustryChainEventScreenInterface.value
+      ? industryEventResponseExample.value
+      : isIndustryChainPanoramaModule.value
+      ? industryChainResponseExample.value
+      : isAchievementModule.value
+        ? achievementResponseExample.value
+        : isIndirectModule.value
+          ? indirectResponseExample.value
+          : normalizedResponseExample.value,
     null,
     2,
   ),
@@ -531,6 +773,7 @@ const achievementResponseExample = computed(() => ({
     : null,
   message: achievementErrorMessage.value || 'success',
 }))
+
 const normalizedResponseFields = computed(() => {
   const base = [
     { name: 'code', type: 'int', description: '业务状态码' },
@@ -546,6 +789,32 @@ const normalizedResponseFields = computed(() => {
   return [...base, ...fields]
 })
 const activeRequestFields = computed(() => {
+  if (isIndustryChainEventScreenInterface.value) {
+    return [
+      { name: 'industryChainNode', type: 'string', required: '是', description: '产业链节点名称，可选上游原材料、中游核心技术等' },
+      { name: 'eventTypes', type: 'array[string]', required: '否', description: '事件类型：patent、paper、fund、project、policy、product' },
+      { name: 'topN', type: 'number', required: '否', description: '返回影响力排名前 N 的核心事件' },
+      { name: 'evaluationModel', type: 'string', required: '否', description: '事件影响力评估模型' },
+      { name: 'startTime', type: 'string', required: '否', description: '开始时间，格式 YYYY-MM-DD' },
+      { name: 'endTime', type: 'string', required: '否', description: '结束时间，格式 YYYY-MM-DD' },
+    ]
+  }
+  if (isIndustryChainPanoramaModule.value) {
+    return [
+      { name: 'chain_code', type: 'string', required: '是', description: '产业链代码，可选：AI、ROBOT、BIO、QUANTUM' },
+      { name: 'chain_name', type: 'string', required: '是', description: '产业链名称，与 chain_code 联动' },
+      { name: 'node_id', type: 'string', required: '否', description: '产业链环节 ID，支持 all 或具体环节' },
+      { name: 'node_name', type: 'string', required: '否', description: '环节名称，支持全部环节或具体环节' },
+      { name: 'level', type: 'number', required: '否', description: '层级展开深度：1 上游、2 中游、3 全链路' },
+      { name: 'relation_type', type: 'string', required: '否', description: '关系筛选类型' },
+      { name: 'include_enterprise', type: 'boolean', required: '否', description: '是否返回重点企业' },
+      { name: 'include_expert', type: 'boolean', required: '否', description: '是否返回核心专家' },
+      { name: 'include_patent', type: 'boolean', required: '否', description: '是否返回关联专利统计' },
+      { name: 'include_product', type: 'boolean', required: '否', description: '是否返回核心产品' },
+      { name: 'include_news', type: 'boolean', required: '否', description: '是否返回动态事件' },
+      { name: 'limit', type: 'number', required: '否', description: '返回条数限制' },
+    ]
+  }
   if (isAchievementModule.value) {
     return [
       { name: 'dataSource', type: 'string', required: '是', description: '数据来源，可选值：all、knowledge_graph、mysql' },
@@ -558,7 +827,230 @@ const activeRequestFields = computed(() => {
   }
   return currentInterface.value.requestFields
 })
+function uniqueValues(values: string[][]) {
+  return Array.from(new Set(values.flat()))
+}
+
+const industryChainSeed = computed(() => industryChainSeeds[industryChainForm.chain_code] ?? industryChainSeeds.AI)
+const industryChainVisibleLinks = computed(() => {
+  const level = Number(industryChainForm.level) || 3
+  const seed = industryChainSeed.value
+  return seed.links
+    .filter((link) => link.level <= level)
+    .filter((link) => industryChainForm.node_id === 'all' || link.id === industryChainForm.node_id)
+    .filter((link) => industryChainForm.node_name === '全部环节' || link.name === industryChainForm.node_name)
+})
+const industryChainVisibleRelations = computed(() => {
+  const names = new Set(industryChainVisibleLinks.value.map((link) => link.name))
+  return industryChainSeed.value.relations
+    .filter((relation) => names.has(relation.from) && names.has(relation.to))
+    .filter((relation) => industryChainForm.relation_type === '全部' || relation.type === industryChainForm.relation_type)
+})
+const industryChainDetailRows = computed<Array<[string, string | string[]]>>(() => {
+  const seed = industryChainSeed.value
+  const links = industryChainVisibleLinks.value
+  const relations = industryChainVisibleRelations.value
+  const nodePath = [seed.name, ...links.map((link) => link.name)].join(' / ')
+  const patentCount = links.reduce((sum, link) => sum + link.patents, 0)
+  const products = uniqueValues(links.map((link) => link.products))
+  const statistics = [
+    `节点数量：${links.length}`,
+    `关系数量：${relations.length || '若干'}`,
+    `企业数量：${industryChainForm.include_enterprise === 'true' ? uniqueValues(links.map((link) => link.enterprises)).length : '若干'}`,
+    `专家数量：${industryChainForm.include_expert === 'true' ? uniqueValues(links.map((link) => link.experts)).length : '若干'}`,
+    `专利数量：${industryChainForm.include_patent === 'true' ? patentCount : '若干'}`,
+    `产品数量：${industryChainForm.include_product === 'true' ? products.length : '若干'}`,
+    `动态资讯数量：${industryChainForm.include_news === 'true' ? uniqueValues(links.map((link) => link.news)).length : '若干'}`,
+  ]
+  return [
+    ['产业链', seed.name],
+    ['核心节点', links.map((link) => `${link.name}｜L${link.level}`)],
+    ['节点层级', nodePath],
+    ['上下游关系', relations.length ? relations.map((relation) => `${relation.from} → ${relation.to}`) : ['当前筛选仅展示单环节']],
+    ['数据流向', relations.length ? relations.map((relation) => `${relation.dataFlow}由${relation.from}流向${relation.to}`) : ['当前筛选暂无上下游数据流向']],
+    ['关键技术', uniqueValues(links.map((link) => link.technologies))],
+    ['重点企业', industryChainForm.include_enterprise === 'true' ? uniqueValues(links.map((link) => link.enterprises)) : '未返回重点企业'],
+    ['核心专家', industryChainForm.include_expert === 'true' ? uniqueValues(links.map((link) => link.experts)) : '未返回核心专家'],
+    ['专利产品', industryChainForm.include_patent === 'true' || industryChainForm.include_product === 'true' ? [`专利 ${industryChainForm.include_patent === 'true' ? patentCount : '若干'} 件`, `代表产品包括${industryChainForm.include_product === 'true' ? products.join('、') : '若干产品'}。`] : '未返回专利产品'],
+    ['动态资讯/事件', industryChainForm.include_news === 'true' ? uniqueValues(links.map((link) => link.news)) : '未返回动态资讯'],
+    ['运行态势', '上游资源持续增强，中游技术持续迭代，下游应用场景扩展。'],
+    ['发展机遇', '智能制造、智慧医疗、自动驾驶等应用场景具备产业化发展机会。'],
+    ['统计信息', statistics],
+  ]
+})
+const industryChainGraph = computed(() => {
+  const links = industryChainVisibleLinks.value
+  if (!links.length) return { nodes: [], edges: [] }
+
+  const xSlots = links.length === 1 ? [345] : links.length === 2 ? [180, 560] : [46, 345, 644]
+  const toneSlots = ['blue', 'purple', 'green'] as Array<'blue' | 'purple' | 'green'>
+  const nodes: PrototypeNode[] = links.map((link, index) => ({
+    id: link.id,
+    x: xSlots[index],
+    y: 226,
+    w: 210,
+    h: 126,
+    title: link.name,
+    subtitle: `L${link.level}｜核心环节`,
+    tone: toneSlots[index] ?? 'blue',
+    chips: link.technologies.slice(0, 4),
+  }))
+
+  if (industryChainForm.include_enterprise === 'true') nodes.push({ id: 'ent', x: 46, y: 36, w: 250, h: 118, title: '重点企业', subtitle: '企业分布', tone: 'blue', chips: uniqueValues(links.map((link) => link.enterprises)).slice(0, 4) })
+  if (industryChainForm.include_expert === 'true') nodes.push({ id: 'expert', x: 604, y: 36, w: 250, h: 118, title: '核心专家', subtitle: '技术职称', tone: 'purple', chips: uniqueValues(links.map((link) => link.experts)).slice(0, 4) })
+  if (industryChainForm.include_news === 'true') nodes.push({ id: 'update', x: 46, y: 420, w: 250, h: 118, title: '动态资讯变化', subtitle: '事件/资讯', tone: 'orange', chips: uniqueValues(links.map((link) => link.news)).slice(0, 4) })
+  if (industryChainForm.include_product === 'true' || industryChainForm.include_patent === 'true') {
+    const productChips = industryChainForm.include_product === 'true' ? uniqueValues(links.map((link) => link.products)).slice(0, 3) : []
+    const patentCount = links.reduce((sum, link) => sum + link.patents, 0)
+    nodes.push({ id: 'asset', x: 604, y: 420, w: 250, h: 118, title: '专利产品覆盖', subtitle: '成果沉淀', tone: 'gold', chips: [...productChips, ...(industryChainForm.include_patent === 'true' ? [`专利${patentCount}`] : [])].slice(0, 4) })
+  }
+
+  const edges: PrototypeEdge[] = []
+  industryChainVisibleRelations.value.forEach((relation, index) => {
+    const fromIndex = links.findIndex((link) => link.name === relation.from)
+    const toIndex = links.findIndex((link) => link.name === relation.to)
+    if (fromIndex < 0 || toIndex < 0) return
+
+    if (relation.type.includes('反馈')) {
+      edges.push({
+        id: `rel-${index}`,
+        path: 'M644 346 C548 410 352 410 256 346',
+        label: '场景反馈',
+        labelX: 450,
+        labelY: 404,
+        tone: 'orange',
+        dashed: true,
+      })
+      return
+    }
+
+    const fromX = xSlots[fromIndex] + 210
+    const toX = xSlots[toIndex]
+    edges.push({
+      id: `rel-${index}`,
+      path: `M${fromX} 286 C${fromX + 34} 286 ${toX - 34} 286 ${toX} 286`,
+      label: relation.type,
+      labelX: (fromX + toX) / 2,
+      labelY: 252,
+      tone: 'purple',
+    })
+  })
+  const centerNode = nodes.find((node) => node.id === links[Math.min(1, links.length - 1)]?.id) ?? nodes[0]
+  const centerX = centerNode.x + centerNode.w / 2
+  if (nodes.some((node) => node.id === 'ent')) edges.push({ id: 'ent-core', path: `M296 95 C374 120 ${centerX - 96} 178 ${centerX - 34} 226`, label: '企业布局', labelX: 340, labelY: 146, tone: 'blue' })
+  if (nodes.some((node) => node.id === 'expert')) edges.push({ id: 'expert-core', path: `M604 95 C526 120 ${centerX + 96} 178 ${centerX + 34} 226`, label: '专家支撑', labelX: 560, labelY: 146, tone: 'purple' })
+  if (nodes.some((node) => node.id === 'update')) edges.push({ id: 'update-core', path: `M296 472 C360 448 ${centerX - 88} 390 ${centerX - 42} 352`, label: '动态更新', labelX: 340, labelY: 405, tone: 'orange', dashed: true })
+  if (nodes.some((node) => node.id === 'asset')) edges.push({ id: 'core-asset', path: `M${centerX + 42} 352 C${centerX + 88} 390 540 448 604 472`, label: '专利产品', labelX: 560, labelY: 405, tone: 'gold' })
+  return { nodes, edges }
+})
+const industryChainResponseExample = computed(() => {
+  const seed = industryChainSeed.value
+  const links = industryChainVisibleLinks.value
+  const relations = industryChainVisibleRelations.value
+  return {
+    code: 0,
+    message: 'success',
+    data: {
+      chain: { chain_code: seed.code, chain_name: seed.name, chain_path: seed.path, node_total: links.length, relation_total: relations.length },
+      coreNodes: links.map((link) => ({ node_id: link.id, node_name: link.name, level: link.level, key_technologies: link.technologies, enterprises: industryChainForm.include_enterprise === 'true' ? link.enterprises : [], experts: industryChainForm.include_expert === 'true' ? link.experts : [], products: industryChainForm.include_product === 'true' ? link.products : [], patent_count: industryChainForm.include_patent === 'true' ? link.patents : 0, dynamic_updates: industryChainForm.include_news === 'true' ? link.news : [] })),
+      relations: relations.map((relation) => ({ source: relation.from, target: relation.to, relation_type: relation.type, relation_strength: relation.strength, data_flow: relation.dataFlow })),
+      data_flow: relations.map((relation) => ({ from: relation.from, to: relation.to, flow: relation.dataFlow })),
+      key_technologies: uniqueValues(links.map((link) => link.technologies)),
+      keyTechnologies: uniqueValues(links.map((link) => link.technologies)),
+      enterprises: industryChainForm.include_enterprise === 'true' ? uniqueValues(links.map((link) => link.enterprises)) : [],
+      experts: industryChainForm.include_expert === 'true' ? uniqueValues(links.map((link) => link.experts)) : [],
+      products: industryChainForm.include_product === 'true' ? uniqueValues(links.map((link) => link.products)) : [],
+      patents: industryChainForm.include_patent === 'true' ? links.reduce((sum, link) => sum + link.patents, 0) : 0,
+      dynamicUpdates: industryChainForm.include_news === 'true' ? uniqueValues(links.map((link) => link.news)) : [],
+      interaction: { hierarchyExpandLevel: Number(industryChainForm.level), relationFilter: relations.map((relation) => relation.type), dynamicUpdateEnabled: industryChainForm.include_news === 'true' },
+    },
+  }
+})
+
+const industryEventGraph = computed(() => {
+  const items = industryEventFilteredItems.value.slice(0, 4)
+  if (!items.length) {
+    return {
+      nodes: [
+        { id: 'chain-node', x: 320, y: 230, w: 250, h: 104, title: industryEventForm.industryChainNode, subtitle: '暂无匹配事件', tone: 'orange' as const },
+      ],
+      edges: [],
+    }
+  }
+
+  const topTitles = items.map((item, index) => `TOP${index + 1} ${item.title}`)
+  const experts = Array.from(new Set(items.map((item) => item.expert)))
+  const enterprises = Array.from(new Set(items.map((item) => item.enterprise)))
+  const fields = Array.from(new Set(items.map((item) => item.cooperationField)))
+  const trends = Array.from(new Set(items.map((item) => item.trend)))
+  const nodes: PrototypeNode[] = [
+    { id: 'chain-node', x: 328, y: 232, w: 244, h: 116, title: industryEventForm.industryChainNode, subtitle: `TOP${items.length} 核心事件`, tone: 'purple', chips: fields.slice(0, 4) },
+    { id: 'events', x: 60, y: 72, w: 262, h: 128, title: '影响力核心事件', subtitle: formatIndustryEventModel(industryEventForm.evaluationModel), tone: 'orange', chips: topTitles.slice(0, 4) },
+    { id: 'experts', x: 610, y: 72, w: 250, h: 128, title: '科技专家或人才', subtitle: '节点关联人才', tone: 'green', chips: experts.slice(0, 4) },
+    { id: 'enterprise', x: 610, y: 376, w: 250, h: 128, title: '重点科技企业', subtitle: '角色/合作/经营状况', tone: 'blue', chips: enterprises.slice(0, 4) },
+    { id: 'trend', x: 60, y: 376, w: 262, h: 128, title: '影响与后续趋势', subtitle: '产业链节点分析', tone: 'gold', chips: trends.slice(0, 4) },
+  ]
+  const edges: PrototypeEdge[] = [
+    { id: 'events-node', path: 'M322 136 C384 162 384 220 328 264', label: '事件归属节点', labelX: 382, labelY: 188, tone: 'orange' },
+    { id: 'node-experts', path: 'M572 264 C640 228 688 200 735 200', label: '节点关联人才', labelX: 668, labelY: 220, tone: 'green' },
+    { id: 'node-enterprise', path: 'M572 294 C648 314 706 344 735 376', label: '节点涉及企业', labelX: 668, labelY: 332, tone: 'blue' },
+    { id: 'node-trend', path: 'M328 318 C252 338 198 356 164 376', label: '影响及趋势', labelX: 250, labelY: 352, tone: 'gold', dashed: true },
+  ]
+  return { nodes, edges }
+})
+
+const industryEventResponseExample = computed(() => {
+  const items = industryEventFilteredItems.value
+  return {
+    code: 200,
+    success: true,
+    data: {
+      industryChainNode: industryEventForm.industryChainNode,
+      eventTypes: industryEventForm.eventTypes === '全部' ? ['patent', 'paper', 'fund'] : [industryEventForm.eventTypes],
+      timeRange: { startTime: industryEventForm.startTime, endTime: industryEventForm.endTime },
+      evaluationModel: industryEventForm.evaluationModel,
+      total: items.length,
+      events: items.map((item, index) => ({
+        eventId: item.id,
+        rank: index + 1,
+        eventType: item.eventType,
+        eventTypeName: industryEventTypeNames[item.eventType] ?? item.eventType,
+        title: item.title,
+        eventTime: item.eventTime,
+        score: item.score,
+        impactFactors: ['引用次数', '事件级别', '时效性', '产业链相关度'],
+      })),
+    },
+    message: 'success',
+  }
+})
+
 const activeResponseFields = computed(() => {
+  if (isIndustryChainEventScreenInterface.value) {
+    return [
+      { name: 'industryChainNode', type: 'string', description: '产业链节点名称' },
+      { name: 'eventTypes', type: 'array[string]', description: '事件类型' },
+      { name: 'timeRange', type: 'object', description: '时间范围' },
+      { name: 'evaluationModel', type: 'string', description: '事件影响力评估模型' },
+      { name: 'total', type: 'number', description: '本次返回 TOP-N 事件数量' },
+      { name: 'events', type: 'array[object]', description: '影响力排名前 N 的核心事件' },
+      { name: 'events[].score', type: 'number', description: '影响力评分' },
+      { name: 'events[].impactFactors', type: 'array[string]', description: '评分因素' },
+    ]
+  }
+  if (isIndustryChainPanoramaModule.value) {
+    return [
+      { name: 'chain', type: 'object', description: '产业链基础信息、路径与统计' },
+      { name: 'coreNodes', type: 'array[object]', description: '各环节核心节点、层级与展开状态' },
+      { name: 'relations', type: 'array[object]', description: '上下游关联关系' },
+      { name: 'data_flow', type: 'array[object]', description: '数据流向' },
+      { name: 'key_technologies', type: 'array[string]', description: '关键技术清单' },
+      { name: 'enterprises', type: 'array[string]', description: '重点企业清单' },
+      { name: 'experts', type: 'array[string]', description: '核心专家清单' },
+      { name: 'dynamicUpdates', type: 'array[string]', description: '动态事件与更新内容' },
+      { name: 'interaction', type: 'object', description: '层级展开、关系筛选与动态更新状态' },
+    ]
+  }
   if (isAchievementModule.value) {
     return [
       { name: 'expertList', type: 'array[string]', description: '专家列表，按专家A、专家B顺序输出' },
@@ -641,6 +1133,50 @@ console.log(await response.json());`,
 }))
 
 const currentCodeSamples = computed(() => {
+  if (isIndustryChainEventScreenInterface.value) {
+    const payload = JSON.stringify(
+      {
+        industryChainNode: industryEventForm.industryChainNode,
+        eventTypes: industryEventForm.eventTypes === '全部' ? ['patent', 'paper', 'fund', 'project', 'policy', 'product'] : [industryEventForm.eventTypes],
+        topN: Number(industryEventForm.topN),
+        evaluationModel: industryEventForm.evaluationModel,
+        startTime: industryEventForm.startTime,
+        endTime: industryEventForm.endTime,
+      },
+      null,
+      2,
+    )
+    return {
+      python: `import requests\n\nurl = "http://127.0.0.1:8891/api/v1/industry-chain/topn-events/screen"\npayload = ${payload}\n\nresponse = requests.post(url, json=payload, timeout=30)\nresponse.raise_for_status()\nprint(response.json())`,
+      node: `const url = "http://127.0.0.1:8891/api/v1/industry-chain/topn-events/screen";\nconst payload = ${payload};\n\nconst response = await fetch(url, {\n  method: "POST",\n  headers: { "Content-Type": "application/json" },\n  body: JSON.stringify(payload),\n});\n\nconsole.log(await response.json());`,
+      curl: `curl -X POST "http://127.0.0.1:8891/api/v1/industry-chain/topn-events/screen" \\\n  -H "Content-Type: application/json" \\\n  -d '${payload.replaceAll("'", "\\'")}'`,
+    }
+  }
+  if (isIndustryChainPanoramaModule.value) {
+    const payload = JSON.stringify(
+      {
+        chain_code: industryChainForm.chain_code,
+        chain_name: industryChainForm.chain_name,
+        node_id: industryChainForm.node_id,
+        node_name: industryChainForm.node_name,
+        level: Number(industryChainForm.level),
+        relation_type: industryChainForm.relation_type,
+        include_enterprise: industryChainForm.include_enterprise === 'true',
+        include_expert: industryChainForm.include_expert === 'true',
+        include_patent: industryChainForm.include_patent === 'true',
+        include_product: industryChainForm.include_product === 'true',
+        include_news: industryChainForm.include_news === 'true',
+        limit: Number(industryChainForm.limit),
+      },
+      null,
+      2,
+    )
+    return {
+      python: `import requests\n\nurl = "http://127.0.0.1:8891/api/industry-chain/panorama/infer"\npayload = ${payload}\n\nresponse = requests.post(url, json=payload, timeout=30)\nresponse.raise_for_status()\nprint(response.json())`,
+      node: `const url = "http://127.0.0.1:8891/api/industry-chain/panorama/infer";\nconst payload = ${payload};\n\nconst response = await fetch(url, {\n  method: "POST",\n  headers: { "Content-Type": "application/json" },\n  body: JSON.stringify(payload),\n});\n\nconsole.log(await response.json());`,
+      curl: `curl -X POST "http://127.0.0.1:8891/api/industry-chain/panorama/infer" \\\n  -H "Content-Type: application/json" \\\n  -d '${payload.replaceAll("'", "\\'")}'`,
+    }
+  }
   if (isAchievementModule.value) {
     const payload = JSON.stringify(
       {
@@ -727,6 +1263,26 @@ function graphTitleLimit(width: number) {
   return 9
 }
 
+function graphChipWidth(width: number) {
+  if (width >= 250) return 110
+  return width >= 196 ? 96 : 48
+}
+
+function graphChipX(width: number, index: number) {
+  if (width >= 250) return (width - 232) / 2 + (index % 2) * 122
+  return width >= 196 ? 18 + (index % 2) * 106 : 14 + (index % 3) * 56
+}
+
+function graphChipY(height: number, width: number, index: number) {
+  return width >= 196 ? height - 58 + Math.floor(index / 2) * 26 : height - 30 + Math.floor(index / 3) * 24
+}
+
+function graphChipTextLimit(width: number) {
+  if (width >= 250) return 10
+  if (width >= 196) return 8
+  return 4
+}
+
 const highlightedResponseJson = computed(() => highlightCode(currentResponseJson.value))
 const highlightedCodeSample = computed(() => highlightCode(currentCodeSamples.value[activeCode.value]))
 
@@ -736,6 +1292,7 @@ watch(
     activeInterfaceIndex.value = defaultInterfaceIndex(String(routeName ?? ''))
     activeSampleIndex.value = 0
     genericParams.value = {}
+    activeIndustryCombo.value = null
     resultMode.value = 'structured'
     activeView.value = 'test'
   },
@@ -963,6 +1520,7 @@ function closeModal() {
   activeIndirectCombo.value = null
   activeAchievementCombo.value = null
   activeGenericCombo.value = null
+  activeIndustryCombo.value = null
 }
 
 function toggleIndirectCombo(field: 'corenode_id' | 'relation_type') {
@@ -979,6 +1537,42 @@ function formatIndirectExpertOption(value: string) {
   return name ? `${value}  ${name}` : value
 }
 
+function selectIndustryOption(field: keyof typeof industryChainForm, value: string) {
+  if (field === 'chain_code') {
+    const seed = industryChainSeeds[value] ?? industryChainSeeds.AI
+    industryChainForm.chain_code = seed.code
+    industryChainForm.chain_name = seed.name
+    industryChainForm.node_id = 'all'
+    industryChainForm.node_name = '全部环节'
+  } else if (field === 'chain_name') {
+    const code = industryChainNameToCode.value[value] ?? 'AI'
+    const seed = industryChainSeeds[code]
+    industryChainForm.chain_code = seed.code
+    industryChainForm.chain_name = seed.name
+    industryChainForm.node_id = 'all'
+    industryChainForm.node_name = '全部环节'
+  } else if (field === 'node_id') {
+    industryChainForm.node_id = value
+    industryChainForm.node_name = value === 'all' ? '全部环节' : industryChainSeed.value.links.find((link) => link.id === value)?.name ?? '全部环节'
+  } else if (field === 'node_name') {
+    industryChainForm.node_name = value
+    industryChainForm.node_id = value === '全部环节' ? 'all' : industryChainSeed.value.links.find((link) => link.name === value)?.id ?? 'all'
+  } else {
+    industryChainForm[field] = value
+  }
+  activeIndustryCombo.value = null
+}
+
+function toggleIndustryCombo(field: string) {
+  activeIndustryCombo.value = activeIndustryCombo.value === field ? null : field
+}
+
+function formatIndustryOption(field: string, value: string) {
+  if (field === 'chain_code') return `${value}  ${industryChainSeeds[value]?.name ?? ''}`
+  if (field === 'node_id') return value === 'all' ? 'all  全部环节' : `${value}  ${industryChainSeed.value.links.find((link) => link.id === value)?.name ?? ''}`
+  return value
+}
+
 function toggleAchievementCombo(field: 'expertAId' | 'expertBId' | 'achievementTypes') {
   activeAchievementCombo.value = activeAchievementCombo.value === field ? null : field
 }
@@ -992,6 +1586,7 @@ function formatAchievementExpertOption(value: string) {
   const name = achievementExpertNames[value]
   return name ? `${value}  ${name}` : value
 }
+
 </script>
 
 <template>
@@ -1031,7 +1626,7 @@ function formatAchievementExpertOption(value: string) {
           <div class="reasoning-placeholder__time">最近测试时间：{{ lastTestTime }}</div>
         </div>
         <div class="reasoning-placeholder__canvas kg-graph-canvas">
-          <svg class="prototype-graph" viewBox="0 0 760 580" role="img" :aria-label="`${title}图谱预览`">
+                      <svg class="prototype-graph" viewBox="0 0 900 580" role="img" :aria-label="`${title}图谱预览`">
             <defs>
               <marker
                 v-for="tone in ['blue', 'green', 'purple', 'orange', 'gold']"
@@ -1054,15 +1649,15 @@ function formatAchievementExpertOption(value: string) {
                   :d="edge.path"
                   :marker-end="`url(#proto-arrow-${edge.tone})`"
                 />
-                <text
-                  v-if="edge.label"
-                  class="prototype-edge-label"
-                  :class="`prototype-edge-label--${edge.tone}`"
-                  :x="edge.labelX"
-                  :y="edge.labelY"
-                >
-                  {{ edge.label }}
-                </text>
+                  <text
+                    v-if="edge.label"
+                    class="prototype-edge-label"
+                    :class="`prototype-edge-label--${edge.tone}`"
+                    :x="edge.labelX"
+                    :y="edge.labelY"
+                  >
+                    {{ edge.label }}
+                  </text>
               </template>
             </g>
             <g>
@@ -1096,8 +1691,10 @@ function formatAchievementExpertOption(value: string) {
                 </text>
                 <template v-if="node.chips?.length">
                   <g v-for="(chip, index) in node.chips.slice(0, 4)" :key="chip">
-                    <rect class="prototype-chip" :x="14 + (index % 3) * 56" :y="node.h - 30 + Math.floor(index / 3) * 24" width="48" height="22" rx="6" />
-                    <text class="prototype-chip-text" :x="38 + (index % 3) * 56" :y="node.h - 16 + Math.floor(index / 3) * 24">{{ chip }}</text>
+                    <rect class="prototype-chip" :x="graphChipX(node.w, index)" :y="graphChipY(node.h, node.w, index)" :width="graphChipWidth(node.w)" height="22" rx="6" />
+                    <text class="prototype-chip-text" :x="graphChipX(node.w, index) + graphChipWidth(node.w) / 2" :y="graphChipY(node.h, node.w, index) + 14">
+                      <tspan v-for="(line, lineIndex) in splitGraphText(chip, graphChipTextLimit(node.w)).slice(0, 1)" :key="line" :x="graphChipX(node.w, index) + graphChipWidth(node.w) / 2" :dy="lineIndex === 0 ? 0 : 12">{{ line }}</tspan>
+                    </text>
                   </g>
                 </template>
               </g>
@@ -1123,7 +1720,13 @@ function formatAchievementExpertOption(value: string) {
             <dt>{{ label }}</dt>
             <dd>
               <template v-if="Array.isArray(value)">
-                <span v-for="item in value" :key="item" class="reasoning-placeholder__tag">{{ item }}</span>
+                <span
+                  v-for="(item, index) in value"
+                  :key="item"
+                  :class="{ 'reasoning-placeholder__tag': !isIndustryChainPanoramaModule && !isIndustryChainEventModule }"
+                >
+                  {{ item }}<template v-if="(isIndustryChainPanoramaModule || isIndustryChainEventModule) && index < value.length - 1">、</template>
+                </span>
               </template>
               <template v-else>{{ value }}</template>
             </dd>
@@ -1212,7 +1815,69 @@ function formatAchievementExpertOption(value: string) {
             <button type="button" @click="closeModal"><img :src="iconClose" alt="" aria-hidden="true" /></button>
           </div>
         </header>
-        <div v-if="isIndirectModule" class="modal__body config-form" @click="activeIndirectCombo = null">
+        <div v-if="isIndustryChainEventScreenInterface" class="modal__body config-form" @click="activeIndustryCombo = null">
+          <label v-for="field in activeRequestFields" :key="field.name">
+            <span><i>{{ field.required === '是' ? '*' : '' }}</i>{{ field.name }}</span>
+            <div v-if="isDateFieldName(field.name)" class="combo-field date-field" @click.stop>
+              <input
+                :value="industryEventForm[field.name as keyof typeof industryEventForm]"
+                :placeholder="`请选择${field.name}`"
+                type="date"
+                @input="industryEventForm[field.name as keyof typeof industryEventForm] = ($event.target as HTMLInputElement).value"
+              />
+            </div>
+            <div v-else class="combo-field" @click.stop>
+              <input
+                :value="industryEventForm[field.name as keyof typeof industryEventForm]"
+                :placeholder="`请选择或输入${field.name}`"
+                @focus="activeIndustryCombo = field.name"
+                @input="industryEventForm[field.name as keyof typeof industryEventForm] = ($event.target as HTMLInputElement).value"
+              />
+              <button class="combo-field__arrow" type="button" @click="toggleIndustryCombo(field.name)">
+                <img :src="iconSelectArrow" alt="" aria-hidden="true" />
+              </button>
+              <div v-if="activeIndustryCombo === field.name" class="combo-field__menu">
+                <button
+                  v-for="value in industryEventOptions[field.name as keyof typeof industryEventOptions]"
+                  :key="value"
+                  type="button"
+                  :class="{ 'is-selected': industryEventForm[field.name as keyof typeof industryEventForm] === value }"
+                  @click="industryEventForm[field.name as keyof typeof industryEventForm] = value; activeIndustryCombo = null"
+                >
+                  {{ field.name === 'eventTypes' ? `${value}  ${industryEventTypeNames[value] ?? ''}` : value }}
+                </button>
+              </div>
+            </div>
+          </label>
+        </div>
+        <div v-else-if="isIndustryChainPanoramaModule" class="modal__body config-form" @click="activeIndustryCombo = null">
+          <label v-for="field in activeRequestFields" :key="field.name">
+            <span><i>{{ field.required === '是' ? '*' : '' }}</i>{{ field.name }}</span>
+            <div class="combo-field" @click.stop>
+              <input
+                :value="industryChainForm[field.name as keyof typeof industryChainForm]"
+                :placeholder="`请选择或输入${field.name}`"
+                @focus="activeIndustryCombo = field.name"
+                @input="industryChainForm[field.name as keyof typeof industryChainForm] = ($event.target as HTMLInputElement).value"
+              />
+              <button class="combo-field__arrow" type="button" @click="toggleIndustryCombo(field.name)">
+                <img :src="iconSelectArrow" alt="" aria-hidden="true" />
+              </button>
+              <div v-if="activeIndustryCombo === field.name" class="combo-field__menu">
+                <button
+                  v-for="value in industryChainOptions[field.name as keyof typeof industryChainOptions]"
+                  :key="value"
+                  type="button"
+                  :class="{ 'is-selected': industryChainForm[field.name as keyof typeof industryChainForm] === value }"
+                  @click="selectIndustryOption(field.name as keyof typeof industryChainForm, value)"
+                >
+                  {{ formatIndustryOption(field.name, value) }}
+                </button>
+              </div>
+            </div>
+          </label>
+        </div>
+        <div v-else-if="isIndirectModule" class="modal__body config-form" @click="activeIndirectCombo = null">
           <label>
             <span><i>*</i>corenode_id</span>
             <div class="combo-field" @click.stop>
@@ -1338,23 +2003,25 @@ function formatAchievementExpertOption(value: string) {
           </label>
           <label>
             <span>startTime</span>
-            <select v-model="achievementForm.startTime">
-              <option v-for="value in achievementOptions.startTime" :key="value" :value="value">{{ value }}</option>
-            </select>
-            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
+            <input v-model="achievementForm.startTime" type="date" />
           </label>
           <label>
             <span>endTime</span>
-            <select v-model="achievementForm.endTime">
-              <option v-for="value in achievementOptions.endTime" :key="value" :value="value">{{ value }}</option>
-            </select>
-            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
+            <input v-model="achievementForm.endTime" type="date" />
           </label>
         </div>
         <div v-else class="modal__body config-form" @click="activeGenericCombo = null">
           <label v-for="field in visibleParams" :key="field.name">
             <span><i>{{ field.required === '是' ? '*' : '' }}</i>{{ field.name }}</span>
-            <div class="combo-field" @click.stop>
+            <div v-if="isDateFieldName(field.name)" class="combo-field date-field" @click.stop>
+              <input
+                :value="genericParamValue(field.name)"
+                :placeholder="`请选择${field.name}`"
+                type="date"
+                @input="handleGenericParamInput(field.name, $event)"
+              />
+            </div>
+            <div v-else class="combo-field" @click.stop>
               <input
                 :value="genericParamValue(field.name)"
                 :placeholder="`请选择或输入${field.name}`"
@@ -1554,9 +2221,10 @@ function formatAchievementExpertOption(value: string) {
 }
 
 .prototype-graph {
-  width: min(100%, 860px);
-  height: min(100%, 620px);
-  min-height: 420px;
+  width: min(100%, 960px);
+  height: auto;
+  max-height: min(100%, 620px);
+  aspect-ratio: 900 / 580;
 }
 
 .prototype-edge {
@@ -1609,9 +2277,35 @@ function formatAchievementExpertOption(value: string) {
 }
 
 .prototype-edge-label {
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 700;
   text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.prototype-edge-label-bg {
+  fill: rgba(255, 255, 255, 0.94);
+  stroke-width: 1;
+}
+
+.prototype-edge-label-bg--blue {
+  stroke: #b7cdfc;
+}
+
+.prototype-edge-label-bg--green {
+  stroke: #b8e6c0;
+}
+
+.prototype-edge-label-bg--purple {
+  stroke: #d7b8ff;
+}
+
+.prototype-edge-label-bg--orange {
+  stroke: #ffd0a6;
+}
+
+.prototype-edge-label-bg--gold {
+  stroke: #f2d883;
 }
 
 .prototype-edge-label--blue {
@@ -1799,6 +2493,114 @@ function formatAchievementExpertOption(value: string) {
   color: var(--text-secondary);
   background: #f2f4f7;
   line-height: 20px;
+}
+
+.industry-structured {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 16px;
+  overflow: auto;
+}
+
+.industry-structured-card {
+  padding: 12px;
+  border: 1px solid #dbe7ff;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f7fbff 0%, #ffffff 100%);
+}
+
+.industry-structured-card h3 {
+  margin: 0 0 10px;
+  color: #1f4fbf;
+  font-size: 15px;
+}
+
+.industry-structured-card__row {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  padding: 8px 0;
+  border-top: 1px dashed rgba(52, 120, 246, 0.22);
+}
+
+.industry-structured-card__row strong {
+  color: #344054;
+  font-weight: 700;
+}
+
+.industry-structured-card__row span,
+.industry-structured-card__tags span {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 6px 6px 0;
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: #2456c7;
+  background: #eaf2ff;
+  line-height: 18px;
+}
+
+.industry-structured-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.industry-structured-card--green {
+  border-color: #c9efd1;
+  background: linear-gradient(135deg, #f2fff4 0%, #ffffff 100%);
+}
+
+.industry-structured-card--green h3,
+.industry-structured-card--green span {
+  color: #168326;
+}
+
+.industry-structured-card--green span {
+  background: #e8f8ec;
+}
+
+.industry-structured-card--purple {
+  border-color: #e5d4ff;
+  background: linear-gradient(135deg, #fbf7ff 0%, #ffffff 100%);
+}
+
+.industry-structured-card--purple h3,
+.industry-structured-card--purple span {
+  color: #7532d8;
+}
+
+.industry-structured-card--purple span {
+  background: #f1e8ff;
+}
+
+.industry-structured-card--orange {
+  border-color: #ffd9b8;
+  background: linear-gradient(135deg, #fff8f1 0%, #ffffff 100%);
+}
+
+.industry-structured-card--orange h3,
+.industry-structured-card--orange span {
+  color: #d85c00;
+}
+
+.industry-structured-card--orange span {
+  background: #fff0df;
+}
+
+.industry-structured-card--gold {
+  border-color: #f7df90;
+  background: linear-gradient(135deg, #fffbed 0%, #ffffff 100%);
+}
+
+.industry-structured-card--gold h3,
+.industry-structured-card--gold span {
+  color: #a86d00;
+}
+
+.industry-structured-card--gold span {
+  background: #fff4cc;
 }
 
 .reasoning-placeholder__code {

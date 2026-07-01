@@ -2,7 +2,6 @@
 import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-import iconCalendar from '../../assets/icons/icon-calendar.svg'
 import iconClose from '../../assets/icons/icon-close.svg'
 import iconInfo from '../../assets/icons/icon-info.svg'
 import iconModalSetting from '../../assets/icons/icon-modal-setting.svg'
@@ -24,10 +23,7 @@ const activeView = ref<'test' | 'developer'>('test')
 const resultMode = ref<'structured' | 'api'>('structured')
 const showConfigModal = ref(false)
 const showTechModal = ref(false)
-const activeDateField = ref<'start_time' | 'end_time' | null>(null)
 const activeComboField = ref<'expert_id' | 'organization' | null>(null)
-const calendarMonth = ref(new Date())
-const weekDays = ['一', '二', '三', '四', '五', '六', '日']
 const expertOptionNames: Record<string, string> = {
   E10001: '李佳宁',
   E20001: '陈建国',
@@ -51,71 +47,8 @@ const {
   execute,
 } = useExpertDirectRelation(() => true)
 
-const calendarTitle = computed(() => {
-  const year = calendarMonth.value.getFullYear()
-  const month = `${calendarMonth.value.getMonth() + 1}`.padStart(2, '0')
-  return `${year}-${month}`
-})
-
-const calendarDays = computed(() => {
-  const year = calendarMonth.value.getFullYear()
-  const month = calendarMonth.value.getMonth()
-  const firstDay = new Date(year, month, 1)
-  const startOffset = (firstDay.getDay() + 6) % 7
-  const startDate = new Date(year, month, 1 - startOffset)
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(startDate)
-    date.setDate(startDate.getDate() + index)
-    return {
-      date,
-      value: formatDate(date),
-      inMonth: date.getMonth() === month,
-    }
-  })
-})
-
-function formatDate(date: Date) {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function parseDate(value: string) {
-  const match = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(value)
-  if (!match) return null
-  const [, year, month, day] = match
-  return new Date(Number(year), Number(month) - 1, Number(day ?? 1))
-}
-
-function openDatePicker(field: 'start_time' | 'end_time') {
-  if (activeDateField.value === field) {
-    activeDateField.value = null
-    return
-  }
-  activeDateField.value = field
-  calendarMonth.value = parseDate(form[field]) ?? new Date()
-}
-
-function moveCalendarMonth(offset: number) {
-  calendarMonth.value = new Date(
-    calendarMonth.value.getFullYear(),
-    calendarMonth.value.getMonth() + offset,
-    1,
-  )
-}
-
-function pickDate(value: string) {
-  if (activeDateField.value) {
-    form[activeDateField.value] = value.slice(0, 7)
-  }
-  activeDateField.value = null
-}
-
 function toggleCombo(field: 'expert_id' | 'organization') {
   activeComboField.value = activeComboField.value === field ? null : field
-  activeDateField.value = null
 }
 
 function selectComboOption(field: 'expert_id' | 'organization', value: string) {
@@ -131,7 +64,6 @@ function formatExpertOption(value: string) {
 function closeModal() {
   showConfigModal.value = false
   showTechModal.value = false
-  activeDateField.value = null
   activeComboField.value = null
 }
 
@@ -219,7 +151,7 @@ async function handleSaveAndExecute() {
             <button type="button" @click="showConfigModal = false"><img :src="iconClose" alt="" aria-hidden="true" /></button>
           </div>
         </header>
-        <div class="modal__body config-form" @click="activeDateField = null; activeComboField = null">
+        <div class="modal__body config-form" @click="activeComboField = null">
           <label>
             <span><i>*</i>expert_id</span>
             <div class="combo-field" @click.stop>
@@ -262,75 +194,11 @@ async function handleSaveAndExecute() {
           </label>
           <label>
             <span>start_time</span>
-            <div class="date-field date-field--select" @click.stop>
-              <input v-model="form.start_time" list="expert-direct-start-options" placeholder="YYYY-MM" />
-              <datalist id="expert-direct-start-options">
-                <option v-for="value in fieldOptions.start_time" :key="value" :value="value" />
-              </datalist>
-              <button class="date-field__icon" type="button" @click="openDatePicker('start_time')">
-                <img class="calendar-icon" :src="iconCalendar" alt="" aria-hidden="true" />
-              </button>
-              <div v-if="activeDateField === 'start_time'" class="calendar-popover">
-                <div class="calendar-popover__header">
-                  <button type="button" @click="moveCalendarMonth(-1)">‹</button>
-                  <strong>{{ calendarTitle }}</strong>
-                  <button type="button" @click="moveCalendarMonth(1)">›</button>
-                </div>
-                <div class="calendar-popover__week">
-                  <span v-for="day in weekDays" :key="day">{{ day }}</span>
-                </div>
-                <div class="calendar-popover__days">
-                  <button
-                    v-for="day in calendarDays"
-                    :key="day.value"
-                    type="button"
-                    :class="{ 'is-muted': !day.inMonth, 'is-selected': form.start_time === day.value }"
-                    @click="pickDate(day.value)"
-                  >
-                    {{ day.date.getDate() }}
-                  </button>
-                </div>
-                <div class="calendar-popover__footer">
-                  <button type="button" @click="activeDateField = null">关闭</button>
-                </div>
-              </div>
-            </div>
+            <input v-model="form.start_time" type="date" />
           </label>
           <label>
             <span>end_time</span>
-            <div class="date-field date-field--select" @click.stop>
-              <input v-model="form.end_time" list="expert-direct-end-options" placeholder="YYYY-MM" />
-              <datalist id="expert-direct-end-options">
-                <option v-for="value in fieldOptions.end_time" :key="value" :value="value" />
-              </datalist>
-              <button class="date-field__icon" type="button" @click="openDatePicker('end_time')">
-                <img class="calendar-icon" :src="iconCalendar" alt="" aria-hidden="true" />
-              </button>
-              <div v-if="activeDateField === 'end_time'" class="calendar-popover">
-                <div class="calendar-popover__header">
-                  <button type="button" @click="moveCalendarMonth(-1)">‹</button>
-                  <strong>{{ calendarTitle }}</strong>
-                  <button type="button" @click="moveCalendarMonth(1)">›</button>
-                </div>
-                <div class="calendar-popover__week">
-                  <span v-for="day in weekDays" :key="day">{{ day }}</span>
-                </div>
-                <div class="calendar-popover__days">
-                  <button
-                    v-for="day in calendarDays"
-                    :key="day.value"
-                    type="button"
-                    :class="{ 'is-muted': !day.inMonth, 'is-selected': form.end_time === day.value }"
-                    @click="pickDate(day.value)"
-                  >
-                    {{ day.date.getDate() }}
-                  </button>
-                </div>
-                <div class="calendar-popover__footer">
-                  <button type="button" @click="activeDateField = null">关闭</button>
-                </div>
-              </div>
-            </div>
+            <input v-model="form.end_time" type="date" />
           </label>
         </div>
         <footer class="modal__footer">

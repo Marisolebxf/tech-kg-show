@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 
 import EnterpriseRelationView from '../views/enterprise-relation/EnterpriseRelationView.vue'
 import ExpertDirectRelationView from '../views/expert-direct/ExpertDirectRelationView.vue'
@@ -46,7 +46,7 @@ const placeholderRoutes = [
 ]
 
 export const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory('/tech-kg-show/'),
   routes: [
     {
       path: '/',

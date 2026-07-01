@@ -18,20 +18,18 @@ import type {
 } from './types'
 
 const endpoint = '/api/v1/scholar-paper-cooperation/demo/structured-result'
+const featureName = '专家论文合作关系查询接口'
 
-const subfunctionOptions = ['专家论文合作关系构建'] as const
 const dataSourceOptions: Array<{ label: string; value: DataSource }> = [
-  { label: '全部', value: 'all' },
-  { label: '知识图谱', value: 'knowledge_graph' },
-  { label: '知网', value: 'cnki' },
-  { label: '万方', value: 'wanfang' },
-  { label: 'Web of Science', value: 'web_of_science' },
+  { label: 'all', value: 'all' },
+  { label: 'mysql', value: 'mysql' },
+  { label: 'knowledge_graph 知识图谱', value: 'knowledge_graph' },
 ]
 
 const defaultParams: ExpertPaperCooperationDemoRequest = {
   dataSource: 'knowledge_graph',
-  expertAId: 'COOP-SCH001',
-  expertBId: 'COOP-SCH002',
+  expertAId: 'E10001',
+  expertBId: 'E10002',
   startTime: '2021-01-01',
   endTime: '2024-12-31',
 }
@@ -40,36 +38,35 @@ const mockStructuredResult: ExpertPaperCooperationStructuredResultOnlyResponse =
   structuredResult: {
     authorList: ['陈建国', '刘芳'],
     authorUnits: ['清华大学', '北京大学'],
-    paperTopics: ['知识图谱', '学术图谱', '合作网络', '社区发现'],
-    cooperationPaperCount: 4,
+    paperTopics: ['知识图谱', '学术网络', '关系推理'],
+    researchDirections: ['学术知识图谱构建', '专家关系挖掘', '图神经网络推理'],
+    cooperationPaperCount: 6,
     journalLevelCount: {
       'CCF-A2': 2,
       'CCF-B1': 2,
     },
     conferenceLevelCount: {},
-    cooperationFrequency: 4,
-    academicImpactScore: 57.6,
+    cooperationFrequency: 6,
+    academicImpactScore: 78.4,
     citation: {
       total: 225,
       max: 88,
     },
     cooperationTimeRange: {
-      startYear: 2021,
-      endYear: 2024,
-      displayText: '2021 - 2024',
+      startTime: '2021-01-01',
+      endTime: '2024-12-31',
+      displayText: '2021-01-01 至 2024-12-31',
     },
-    stableTeamName: '清北学术图谱长期合作团队',
-    stableTeamMembers: ['孙明辉', '徐晨曦', '王志远'],
-    coreCollaborators: ['孙明辉', '徐晨曦', '王志远', '郑宇航'],
+    coreTeamMembers: ['陈建国', '刘芳', '周子谦'],
+    stableTeamMembers: ['陈建国', '刘芳', '周子谦', '吴若彤', '李佳宁', '张明远', '王启航'],
     sharedContribution: ['联合论文产出', '高被引合作成果', '跨机构协同研究', '知识图谱联合研究'],
-    representativePapers: ['知识图谱驱动的科研合作网络演化分析', '面向专家画像的学术图谱与核心团队协同挖掘'],
+    dataSource: 'knowledge_graph',
   },
 }
 
 const activeView = ref<'test' | 'developer'>('test')
 const resultMode = ref<'structured' | 'api'>('structured')
 const activeCode = ref<'python' | 'node' | 'curl'>('python')
-const selectedSubfunction = ref<(typeof subfunctionOptions)[number]>('专家论文合作关系构建')
 const showConfigModal = ref(false)
 const showTechModal = ref(false)
 const activeSampleIndex = ref(0)
@@ -85,44 +82,62 @@ const paperSamples = [
   { name: '清北学术图谱合作', params: defaultParams, replacements: {} },
   {
     name: '机器人论文合作',
-    params: { dataSource: 'knowledge_graph' as DataSource, expertAId: 'ROBOT-001', expertBId: 'ROBOT-002', startTime: '2020-01-01', endTime: '2025-12-31' },
+    params: { dataSource: 'mysql' as DataSource, expertAId: 'E20001', expertBId: 'E20002', startTime: '2020-01-01', endTime: '2025-12-31' },
     replacements: {
       陈建国: '陈建国',
       刘芳: '刘芳',
       清华大学: '浙江大学',
       北京大学: '哈尔滨工业大学',
       知识图谱: '机器人感知',
-      学术图谱: '具身智能',
-      合作网络: '多机器人协同',
-      社区发现: '人机交互',
-      清北学术图谱长期合作团队: '机器人感知长期合作团队',
-      孙明辉: '王启航',
-      徐晨曦: '赵清宁',
-      王志远: '许知远',
-      郑宇航: '林嘉树',
-      知识图谱驱动的科研合作网络演化分析: '面向具身智能的多机器人协作感知方法',
-      面向专家画像的学术图谱与核心团队协同挖掘: '复杂场景下机器人任务规划与协同控制',
+      学术网络: '具身智能',
+      关系推理: '多机器人协同',
+      学术知识图谱构建: '多模态感知建模',
+      专家关系挖掘: '机器人任务规划',
+      图神经网络推理: '人机交互控制',
+      周子谦: '王启航',
+      吴若彤: '赵清宁',
+      李佳宁: '许知远',
+      张明远: '林嘉树',
     },
   },
   {
     name: '生物医药论文合作',
-    params: { dataSource: 'knowledge_graph' as DataSource, expertAId: 'BIO-001', expertBId: 'BIO-002', startTime: '2019-01-01', endTime: '2024-12-31' },
+    params: { dataSource: 'all' as DataSource, expertAId: 'E30001', expertBId: 'E30002', startTime: '2019-01-01', endTime: '2024-12-31' },
     replacements: {
       陈建国: '周子谦',
       刘芳: '吴若彤',
       清华大学: '复旦大学',
       北京大学: '上海药物研究所',
       知识图谱: '药物靶点发现',
-      学术图谱: '多组学分析',
-      合作网络: '临床转化',
-      社区发现: '候选药物筛选',
-      清北学术图谱长期合作团队: '药物靶点转化合作团队',
-      孙明辉: '何嘉禾',
-      徐晨曦: '林远航',
-      王志远: '顾雨辰',
-      郑宇航: '韩思远',
-      知识图谱驱动的科研合作网络演化分析: '面向药物靶点发现的多组学知识推理方法',
-      面向专家画像的学术图谱与核心团队协同挖掘: '基于临床证据的候选药物协同筛选研究',
+      学术网络: '多组学分析',
+      关系推理: '临床转化',
+      学术知识图谱构建: '药物靶点识别',
+      专家关系挖掘: '候选药物筛选',
+      图神经网络推理: '生物医药知识图谱',
+      周子谦: '何嘉禾',
+      吴若彤: '林远航',
+      李佳宁: '顾雨辰',
+      张明远: '韩思远',
+    },
+  },
+  {
+    name: '量子信息论文合作',
+    params: { dataSource: 'knowledge_graph' as DataSource, expertAId: 'E40001', expertBId: 'E40002', startTime: '2022-01-01', endTime: '2026-12-31' },
+    replacements: {
+      陈建国: '韩思远',
+      刘芳: '李明哲',
+      清华大学: '中国科学技术大学',
+      北京大学: '中国科学院物理研究所',
+      知识图谱: '量子算法',
+      学术网络: '量子测控',
+      关系推理: '量子纠错',
+      学术知识图谱构建: '量子计算任务建模',
+      专家关系挖掘: '低温测控协同',
+      图神经网络推理: '量子纠错算法优化',
+      周子谦: '王启航',
+      吴若彤: '周欣怡',
+      李佳宁: '赵清宁',
+      张明远: '顾雨辰',
     },
   },
 ]
@@ -141,18 +156,62 @@ function replacePaperDeep<T>(value: T): T {
   return value
 }
 
-const currentMockResult = computed(() => replacePaperDeep(mockStructuredResult))
+const dataSourceCountOffset: Record<DataSource, number> = {
+  all: 2,
+  mysql: -1,
+  knowledge_graph: 0,
+}
+
+const currentMockResult = computed(() => {
+  const result = replacePaperDeep(mockStructuredResult)
+  const structured = result.structuredResult
+  const offset = dataSourceCountOffset[appliedParams.value.dataSource] ?? 0
+  const startYear = Number(appliedParams.value.startTime.slice(0, 4))
+  const endYear = Number(appliedParams.value.endTime.slice(0, 4))
+  const yearSpan = Math.max(1, endYear - startYear + 1)
+  const expertA = paperExpertProfiles[appliedParams.value.expertAId]
+  const expertB = paperExpertProfiles[appliedParams.value.expertBId]
+  if (expertA && expertB) {
+    structured.authorList = [expertA.name, expertB.name]
+    structured.authorUnits = [expertA.unit, expertB.unit]
+  }
+  structured.cooperationPaperCount = Math.max(1, Math.min(8, structured.cooperationPaperCount + offset, yearSpan * 2))
+  structured.cooperationFrequency = structured.cooperationPaperCount
+  structured.academicImpactScore = Math.max(40, Number((structured.academicImpactScore + offset * 4.6).toFixed(1)))
+  structured.citation = {
+    total: Math.max(0, structured.citation.total + offset * 32),
+    max: Math.max(0, structured.citation.max + offset * 9),
+  }
+  structured.cooperationTimeRange = {
+    startTime: appliedParams.value.startTime,
+    endTime: appliedParams.value.endTime,
+    displayText: `${appliedParams.value.startTime} 至 ${appliedParams.value.endTime}`,
+  }
+  structured.dataSource = appliedParams.value.dataSource
+  return result
+})
 const paperParamOptions = computed(() => ({
-  expertAId: Array.from(new Set(paperSamples.map((sample) => sample.params.expertAId))),
-  expertBId: Array.from(new Set(paperSamples.map((sample) => sample.params.expertBId))),
-  startTime: Array.from(new Set(paperSamples.map((sample) => sample.params.startTime))),
-  endTime: Array.from(new Set(paperSamples.map((sample) => sample.params.endTime))),
+  expertAId: ['E10001', 'E20001', 'E30001', 'E40001'],
+  expertBId: ['E10002', 'E20002', 'E30002', 'E40002'],
+  startTime: ['2020-01-01', '2021-01-01', '2022-01-01', '2023-01-01'],
+  endTime: ['2023-12-31', '2024-12-31', '2025-12-31', '2026-12-31'],
 }))
 
-const result = computed(() => apiExample.value?.structuredResult ?? null)
+const paperExpertProfiles: Record<string, { name: string; unit: string }> = {
+  E10001: { name: '陈建国', unit: '清华大学' },
+  E10002: { name: '刘芳', unit: '北京大学' },
+  E20001: { name: '王启航', unit: '浙江大学' },
+  E20002: { name: '赵清宁', unit: '哈尔滨工业大学' },
+  E30001: { name: '周子谦', unit: '复旦大学' },
+  E30002: { name: '吴若彤', unit: '上海药物研究所' },
+  E40001: { name: '韩思远', unit: '中国科学技术大学' },
+  E40002: { name: '李明哲', unit: '中国科学院物理研究所' },
+}
+
+const result = computed(() => (error.value ? null : currentMockResult.value.structuredResult))
 const apiEnvelope = computed(() => ({
   code: 0,
-  data: apiExample.value ?? currentMockResult.value,
+  data: currentMockResult.value,
   message: 'success',
 }))
 const authorA = computed(() => result.value?.authorList?.[0] ?? '专家 A')
@@ -172,18 +231,17 @@ function truncateText(value: string, maxLength: number) {
 const authorUnitPreviewA = computed(() => truncateText(authorUnitA.value, 16))
 const authorUnitPreviewB = computed(() => truncateText(authorUnitB.value, 16))
 const stableTeamMembers = computed(() => result.value?.stableTeamMembers ?? [])
-const coreCollaborators = computed(() => result.value?.coreCollaborators ?? [])
+const coreTeamMembers = computed(() => result.value?.coreTeamMembers ?? [])
 const contributionTags = computed(() => result.value?.sharedContribution ?? [])
-const stableTeamName = computed(() => result.value?.stableTeamName ?? '—')
-const representativePaperText = computed(() => result.value?.representativePapers?.join('、') || '—')
 const periodText = computed(() => result.value?.cooperationTimeRange?.displayText ?? '待返回')
 const paperCount = computed(() => result.value?.cooperationPaperCount ?? 0)
 const citation = computed(() => result.value?.citation ?? { total: 0, max: 0 })
 const impactScore = computed(() => result.value?.academicImpactScore ?? 0)
 const frequency = computed(() => result.value?.cooperationFrequency ?? 0)
 const topicText = computed(() => allPaperTopics.value.join('、') || '—')
+const researchDirectionText = computed(() => result.value?.researchDirections?.join('、') || '—')
 const stableTeamText = computed(() => stableTeamMembers.value.join('、') || '—')
-const collaboratorText = computed(() => coreCollaborators.value.join('、') || '—')
+const coreTeamText = computed(() => coreTeamMembers.value.join('、') || '—')
 const contributionText = computed(() => contributionTags.value.join('、') || '—')
 const journalSummary = computed(() => {
   if (!result.value) {
@@ -217,20 +275,20 @@ const structuredRows = computed(() => [
   ['作者单位', `${authorUnitA.value} / ${authorUnitB.value}`],
   ['合作发表时间', periodText.value || '—'],
   ['论文主题', topicText.value],
+  ['研究方向', researchDirectionText.value],
   ['合作论文数量', paperCount.value ? `${paperCount.value} 篇` : '—'],
   ['期刊/会议级别', journalSummary.value],
   ['论文被引情况', `总被引${citation.value.total} / 最高${citation.value.max}`],
   ['合作频次', frequency.value ? `${frequency.value} 次` : '—'],
   ['学术影响力评分', impactScore.value ? `${impactScore.value}` : '—'],
-  ['稳定团队名称', stableTeamName.value],
+  ['核心团队成员', coreTeamText.value],
   ['稳定团队成员', stableTeamText.value],
-  ['核心合作人员', collaboratorText.value],
   ['合作贡献', contributionText.value],
-  ['代表论文', representativePaperText.value],
+  ['数据来源', appliedParams.value.dataSource],
 ])
 
 const developerRequestFields = [
-  { name: 'dataSource', type: 'string', required: '是', description: '论文数据源' },
+  { name: 'dataSource', type: 'string', required: '是', description: '论文数据源，可选：all、mysql、knowledge_graph' },
   { name: 'expertAId', type: 'string', required: '是', description: '专家 A 唯一标识' },
   { name: 'expertBId', type: 'string', required: '是', description: '专家 B 唯一标识' },
   { name: 'startTime', type: 'string', required: '否', description: '开始时间，格式 YYYY-MM-DD' },
@@ -246,23 +304,24 @@ const developerResponseFields = [
   { name: 'data.structuredResult.authorUnits', type: 'array', description: '作者单位列表' },
   { name: 'data.structuredResult.cooperationTimeRange', type: 'object', description: '合作发表时间范围' },
   { name: 'data.structuredResult.paperTopics', type: 'array', description: '合作论文主题列表' },
+  { name: 'data.structuredResult.researchDirections', type: 'array', description: '研究方向列表' },
   { name: 'data.structuredResult.cooperationPaperCount', type: 'number', description: '合作论文数量' },
   { name: 'data.structuredResult.journalLevelCount', type: 'object', description: '期刊级别统计' },
   { name: 'data.structuredResult.conferenceLevelCount', type: 'object', description: '会议级别统计' },
   { name: 'data.structuredResult.citation', type: 'object', description: '论文被引情况' },
   { name: 'data.structuredResult.cooperationFrequency', type: 'number', description: '合作频次' },
   { name: 'data.structuredResult.academicImpactScore', type: 'number', description: '学术影响力评分' },
-  { name: 'data.structuredResult.stableTeamName', type: 'string', description: '稳定团队名称' },
+  { name: 'data.structuredResult.coreTeamMembers', type: 'array', description: '核心团队成员' },
   { name: 'data.structuredResult.stableTeamMembers', type: 'array', description: '长期稳定合作团队成员' },
-  { name: 'data.structuredResult.coreCollaborators', type: 'array', description: '核心合作人员' },
   { name: 'data.structuredResult.sharedContribution', type: 'array', description: '合作贡献标签' },
-  { name: 'data.structuredResult.representativePapers', type: 'array', description: '代表论文' },
+  { name: 'data.structuredResult.dataSource', type: 'string', description: '本次查询使用的数据来源' },
 ] as const
 
+const requestPayloadText = computed(() => JSON.stringify(appliedParams.value, null, 2))
 const codeSamples = computed(() => ({
-  python: `import json\nimport requests\n\nurl = "http://127.0.0.1:8891${endpoint}"\npayload = {\n    "dataSource": "knowledge_graph",\n    "expertAId": "COOP-SCH001",\n    "expertBId": "COOP-SCH002",\n    "startTime": "2021-01-01",\n    "endTime": "2024-12-31"\n}\n\nresponse = requests.post(url, json=payload, timeout=30)\nresponse.raise_for_status()\nresult = response.json()\nprint(json.dumps(result.get("data", {}).get("structuredResult", {}), ensure_ascii=False, indent=2))`,
-  node: `const url = "http://127.0.0.1:8891${endpoint}";\n\nconst payload = {\n  dataSource: "knowledge_graph",\n  expertAId: "COOP-SCH001",\n  expertBId: "COOP-SCH002",\n  startTime: "2021-01-01",\n  endTime: "2024-12-31",\n};\n\nasync function fetchStructuredResult() {\n  const response = await fetch(url, {\n    method: "POST",\n    headers: { "Content-Type": "application/json" },\n    body: JSON.stringify(payload),\n  });\n\n  if (!response.ok) throw new Error(\`HTTP \${response.status}\`);\n  const result = await response.json();\n  console.log(result.data.structuredResult);\n}\n\nfetchStructuredResult().catch(console.error);`,
-  curl: `curl --location "http://127.0.0.1:8891${endpoint}" \\\n  --header "Content-Type: application/json" \\\n  --data '{\n    "dataSource": "knowledge_graph",\n    "expertAId": "COOP-SCH001",\n    "expertBId": "COOP-SCH002",\n    "startTime": "2021-01-01",\n    "endTime": "2024-12-31"\n  }'`,
+  python: `import json\nimport requests\n\nurl = "http://127.0.0.1:8891${endpoint}"\npayload = ${requestPayloadText.value}\n\nresponse = requests.post(url, json=payload, timeout=30)\nresponse.raise_for_status()\nresult = response.json()\nprint(json.dumps(result, ensure_ascii=False, indent=2))`,
+  node: `const url = "http://127.0.0.1:8891${endpoint}";\nconst payload = ${requestPayloadText.value};\n\nconst response = await fetch(url, {\n  method: "POST",\n  headers: { "Content-Type": "application/json" },\n  body: JSON.stringify(payload),\n});\n\nconsole.log(await response.json());`,
+  curl: `curl -X POST "http://127.0.0.1:8891${endpoint}" \\\n  -H "Content-Type: application/json" \\\n  -d '${requestPayloadText.value.replaceAll("'", "\\'")}'`,
 }))
 const highlightedApiExample = computed(() => highlightCode(JSON.stringify(apiEnvelope.value, null, 2)))
 const highlightedCodeSample = computed(() => highlightCode(codeSamples.value[activeCode.value]))
@@ -279,25 +338,22 @@ function formatNow() {
   })
 }
 
-async function runTest(payload: ExpertPaperCooperationDemoRequest = appliedParams.value) {
+function runTest(payload: ExpertPaperCooperationDemoRequest = appliedParams.value) {
   loading.value = false
   appliedParams.value = { ...payload }
+  const sampleIndex = paperSamples.findIndex((sample) =>
+    sample.params.expertAId === payload.expertAId && sample.params.expertBId === payload.expertBId,
+  )
   const validExpertA = paperParamOptions.value.expertAId.includes(payload.expertAId)
   const validExpertB = paperParamOptions.value.expertBId.includes(payload.expertBId)
-  const hasSample = paperSamples.some((sample) =>
-    sample.params.expertAId === payload.expertAId &&
-    sample.params.expertBId === payload.expertBId &&
-    sample.params.startTime === payload.startTime &&
-    sample.params.endTime === payload.endTime,
-  )
-  if (!validExpertA || !validExpertB) {
+  if (!validExpertA || !validExpertB || payload.expertAId === payload.expertBId) {
     error.value = '未在专家人才库中找到该专家，请检查专家ID是否正确。'
     apiExample.value = null
     lastTestTime.value = formatNow()
     resultMode.value = 'structured'
     return
   }
-  if (!hasSample) {
+  if (sampleIndex < 0) {
     error.value = '未查询到相关结果，请检查输入信息是否正确。'
     apiExample.value = null
     lastTestTime.value = formatNow()
@@ -305,15 +361,15 @@ async function runTest(payload: ExpertPaperCooperationDemoRequest = appliedParam
     return
   }
   error.value = ''
-  apiExample.value = currentMockResult.value
+  activeSampleIndex.value = sampleIndex
   lastTestTime.value = formatNow()
   resultMode.value = 'structured'
 }
 
-async function handleSaveAndRun() {
+function handleSaveAndRun() {
   appliedParams.value = { ...draftParams.value }
   showConfigModal.value = false
-  await runTest(appliedParams.value)
+  runTest(appliedParams.value)
 }
 
 async function handleCopyCode() {
@@ -329,7 +385,7 @@ async function handleCopyCode() {
 }
 
 onMounted(() => {
-  void runTest()
+  runTest()
 })
 </script>
 
@@ -350,16 +406,16 @@ onMounted(() => {
       </button>
     </header>
 
-    <section v-if="activeView === 'test'" class="search-panel-inline">
-      <label class="search-panel-inline__field">
+    <section v-if="activeView === 'test'" class="reasoning-placeholder__controls">
+      <label>
         <span>子功能名称：</span>
-        <select v-model="selectedSubfunction" class="select-with-icon">
-          <option v-for="option in subfunctionOptions" :key="option" :value="option">{{ option }}</option>
+        <select class="select-with-icon">
+          <option>{{ featureName }}</option>
         </select>
         <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
         <img class="field-info-icon" :src="iconInfo" alt="" aria-hidden="true" />
       </label>
-      <div class="search-panel-inline__actions">
+      <div class="reasoning-placeholder__actions">
         <button class="kg-button kg-button--secondary" type="button" @click="showConfigModal = true">参数设置</button>
         <button class="kg-button" type="button" @click="runTest()">
           执行测试
@@ -481,7 +537,7 @@ onMounted(() => {
             <div
               v-for="([label, value]) in structuredRows"
               :key="label"
-              :class="{ 'is-long': ['论文主题', '稳定团队成员', '核心合作人员', '合作贡献'].includes(label) }"
+              :class="{ 'is-long': ['论文主题', '研究方向', '核心团队成员', '稳定团队成员', '合作贡献'].includes(label) }"
             >
               <dt>{{ label }}</dt>
               <dd>{{ value }}</dd>
@@ -496,8 +552,8 @@ onMounted(() => {
       <div class="developer-view__meta">
         <label>
           <span>子功能名称：</span>
-          <select v-model="selectedSubfunction" class="select-with-icon">
-            <option v-for="option in subfunctionOptions" :key="option" :value="option">{{ option }}</option>
+          <select class="select-with-icon" disabled>
+            <option>{{ featureName }}</option>
           </select>
           <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           <img class="field-info-icon" :src="iconInfo" alt="" aria-hidden="true" />
@@ -571,44 +627,33 @@ onMounted(() => {
         </header>
         <div class="modal__body config-form">
           <label>
-            <span><i>*</i>子功能名称</span>
-            <select v-model="selectedSubfunction"><option v-for="option in subfunctionOptions" :key="option">{{ option }}</option></select>
-            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
-          </label>
-          <label>
-            <span><i>*</i>数据来源</span>
+            <span><i>*</i>dataSource</span>
             <select v-model="draftParams.dataSource">
               <option v-for="option in dataSourceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
             <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           </label>
           <label>
-            <span><i>*</i>专家 A ID</span>
-            <input v-model="draftParams.expertAId" list="paper-expert-a-options" placeholder="请选择或输入专家A ID" />
-            <datalist id="paper-expert-a-options">
-              <option v-for="value in paperParamOptions.expertAId" :key="value" :value="value" />
-            </datalist>
+            <span><i>*</i>expertAId</span>
+            <select v-model="draftParams.expertAId">
+              <option v-for="value in paperParamOptions.expertAId" :key="value" :value="value">{{ value }}</option>
+            </select>
+            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           </label>
           <label>
-            <span><i>*</i>专家 B ID</span>
-            <input v-model="draftParams.expertBId" list="paper-expert-b-options" placeholder="请选择或输入专家B ID" />
-            <datalist id="paper-expert-b-options">
-              <option v-for="value in paperParamOptions.expertBId" :key="value" :value="value" />
-            </datalist>
+            <span><i>*</i>expertBId</span>
+            <select v-model="draftParams.expertBId">
+              <option v-for="value in paperParamOptions.expertBId" :key="value" :value="value">{{ value }}</option>
+            </select>
+            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           </label>
           <label>
-            <span><i></i>开始时间</span>
-            <input v-model="draftParams.startTime" list="paper-start-options" placeholder="请选择或输入开始时间" />
-            <datalist id="paper-start-options">
-              <option v-for="value in paperParamOptions.startTime" :key="value" :value="value" />
-            </datalist>
+            <span><i></i>startTime</span>
+            <input v-model="draftParams.startTime" type="date" />
           </label>
           <label>
-            <span><i></i>结束时间</span>
-            <input v-model="draftParams.endTime" list="paper-end-options" placeholder="请选择或输入结束时间" />
-            <datalist id="paper-end-options">
-              <option v-for="value in paperParamOptions.endTime" :key="value" :value="value" />
-            </datalist>
+            <span><i></i>endTime</span>
+            <input v-model="draftParams.endTime" type="date" />
           </label>
         </div>
         <footer class="modal__footer">
@@ -668,6 +713,39 @@ onMounted(() => {
   width: 14px;
   height: 14px;
   object-fit: contain;
+}
+
+.reasoning-placeholder__controls {
+  display: grid;
+  grid-template-columns: 420px minmax(220px, 1fr);
+  gap: var(--space-12);
+  align-items: end;
+  min-height: 44px;
+  padding: 0 var(--space-16) var(--space-4);
+}
+
+.reasoning-placeholder__controls label {
+  position: relative;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.reasoning-placeholder__controls select {
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 34px 0 var(--space-12);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.reasoning-placeholder__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-16);
 }
 
 .search-panel-inline {
@@ -734,6 +812,10 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   gap: var(--space-16);
+}
+
+.search-panel-inline__actions--only {
+  grid-column: 1 / -1;
 }
 
 .expert-colleague__main {

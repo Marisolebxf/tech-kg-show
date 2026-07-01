@@ -49,6 +49,24 @@ function displayValue(value: unknown) {
   return String(value)
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+}
+
+function highlightCode(value: string) {
+  return escapeHtml(value)
+    .replace(/("(?:\\.|[^"\\])*")(?=\s*:)/g, '<span class="code-token code-token--key">$1</span>')
+    .replace(/(:\s*)("(?:\\.|[^"\\])*")/g, '$1<span class="code-token code-token--string">$2</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="code-token code-token--literal">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="code-token code-token--number">$1</span>')
+    .replace(/\b(import|const|await|fetch|print|response|payload|url|curl|POST)\b/g, '<span class="code-token code-token--keyword">$1</span>')
+}
+
+const highlightedApiExampleText = computed(() => highlightCode(props.apiExampleText))
+
 </script>
 
 <template>
@@ -102,7 +120,7 @@ function displayValue(value: unknown) {
       </div>
     </div>
 
-    <pre v-else class="reasoning-placeholder__code">{{ apiExampleText }}</pre>
+    <pre v-else class="reasoning-placeholder__code" v-html="highlightedApiExampleText"></pre>
   </aside>
 </template>
 
@@ -219,6 +237,20 @@ function displayValue(value: unknown) {
   font-size: 13px;
   line-height: 24px;
   white-space: pre-wrap;
+}
+
+.reasoning-placeholder__code :deep(.code-token--key),
+.reasoning-placeholder__code :deep(.code-token--keyword) {
+  color: #7c3aed;
+}
+
+.reasoning-placeholder__code :deep(.code-token--string) {
+  color: #047857;
+}
+
+.reasoning-placeholder__code :deep(.code-token--number),
+.reasoning-placeholder__code :deep(.code-token--literal) {
+  color: #d97706;
 }
 
 .reasoning-placeholder__empty {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 
-import iconCalendar from '../../assets/icons/icon-calendar.svg'
 import iconClose from '../../assets/icons/icon-close.svg'
 import iconCopy from '../../assets/icons/icon-copy.svg'
 import iconInfo from '../../assets/icons/icon-info.svg'
@@ -29,8 +28,8 @@ const colleagueParams = ref<Record<string, string>>({
   expert_id: 'E10001',
   source_expert_id: 'E10001',
   target_expert_id: 'E10002',
-  start_time: '2018-01',
-  end_time: '2024-12',
+  start_time: '2018-01-01',
+  end_time: '2024-12-31',
   organization: '清华大学',
 })
 const colleagueErrorMessage = ref('')
@@ -81,7 +80,7 @@ type ColleagueListData = {
 const colleagueSamples = [
   {
     name: '专家A｜清华知识工程团队',
-    query: { expert_id: 'E10001', start_time: '2018-01', end_time: '2024-12', organization: '清华大学' },
+    query: { expert_id: 'E10001', start_time: '2018-01-01', end_time: '2024-12-31', organization: '清华大学' },
     data: {
       expert: { expert_id: 'E10001', expert_name: '专家A', expert_title: '研究员' },
       work_history: [
@@ -157,7 +156,7 @@ const colleagueSamples = [
   },
   {
     name: '专家A｜浙江机器人联合实验室',
-    query: { expert_id: 'E20001', start_time: '2020-01', end_time: '2025-12', organization: '浙江大学' },
+    query: { expert_id: 'E20001', start_time: '2020-01-01', end_time: '2025-12-31', organization: '浙江大学' },
     data: {
       expert: { expert_id: 'E20001', expert_name: '专家A', expert_title: '教授' },
       work_history: [
@@ -195,7 +194,7 @@ const colleagueSamples = [
   },
   {
     name: '专家A｜复旦药物靶点项目组',
-    query: { expert_id: 'E30001', start_time: '2019-01', end_time: '2024-12', organization: '复旦大学' },
+    query: { expert_id: 'E30001', start_time: '2019-01-01', end_time: '2024-12-31', organization: '复旦大学' },
     data: {
       expert: { expert_id: 'E30001', expert_name: '专家A', expert_title: '研究员' },
       work_history: [
@@ -1014,7 +1013,7 @@ watch(activeSampleIndex, () => {
             <strong>查询失败</strong>
             <p>{{ colleagueErrorMessage }}</p>
           </div>
-          <svg v-else viewBox="0 0 660 520" role="img" aria-label="科技专家同事关系推理结果">
+          <svg v-else class="colleague-graph-svg" viewBox="0 0 700 560" role="img" aria-label="科技专家同事关系推理结果">
             <defs>
               <marker id="arrow-blue-page" markerHeight="8" markerWidth="8" orient="auto" refX="7" refY="4">
                 <path d="M0,0 L8,4 L0,8 Z" fill="#4080ff" />
@@ -1213,28 +1212,12 @@ watch(activeSampleIndex, () => {
           <p v-if="colleagueErrorMessage" class="config-form__error">{{ colleagueErrorMessage }}</p>
           <label v-for="param in currentInterface.requestParams" :key="param.field">
             <span><i>{{ param.required === '是' ? '*' : '' }}</i>{{ param.field }}</span>
-            <div v-if="param.field.includes('time') || param.field.includes('Time')" class="date-field date-field--select" @click.stop>
-              <input
-                :value="currentParameterValue(param.field)"
-                :placeholder="`请选择或输入${param.field}`"
-                @focus="activeParamMenu = param.field"
-                @input="handleParameterInput(param.field, $event)"
-              />
-              <button class="date-field__icon" type="button" @click="toggleParameterMenu(param.field)">
-                <img class="calendar-icon" :src="iconCalendar" alt="" aria-hidden="true" />
-              </button>
-              <div v-if="activeParamMenu === param.field" class="combo-field__menu">
-                <button
-                  v-for="value in parameterOptionValues(param.field)"
-                  :key="value"
-                  type="button"
-                  :class="{ 'is-selected': currentParameterValue(param.field) === value }"
-                  @click="selectParameterOption(param.field, value)"
-                >
-                  {{ value }}
-                </button>
-              </div>
-            </div>
+            <input
+              v-if="param.field.includes('time') || param.field.includes('Time')"
+              :value="currentParameterValue(param.field)"
+              type="date"
+              @input="handleParameterInput(param.field, $event)"
+            />
             <div v-else class="combo-field" @click.stop>
               <input
                 :value="currentParameterValue(param.field)"
@@ -1460,11 +1443,11 @@ watch(activeSampleIndex, () => {
 }
 
 .graph-panel__canvas svg {
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
   display: block;
+  width: min(100%, 980px);
+  height: auto;
+  max-height: min(100%, 720px);
+  aspect-ratio: 700 / 560;
 }
 
 .graph-panel__state {

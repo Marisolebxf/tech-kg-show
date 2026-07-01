@@ -322,8 +322,8 @@ const organizationOptions = [
 ]
 
 const timeOptions = {
-  start_time: ['2018-01', '2019-01', '2020-01', '2021-01', '2022-01'],
-  end_time: ['2023-12', '2024-12', '2025-12', '2026-12'],
+  start_time: ['2018-01-01', '2019-01-01', '2020-01-01', '2021-01-01', '2022-01-01'],
+  end_time: ['2023-12-31', '2024-12-31', '2025-12-31', '2026-12-31'],
 }
 
 function buildDetailRows(item: DirectRelationItem): [string, unknown][] {
@@ -355,10 +355,16 @@ function relationMatchesOrganization(item: DirectRelationItem, organization: str
   ].some((value) => String(value ?? '').includes(keyword))
 }
 
+function normalizeDateBoundary(value: string, boundary: 'start' | 'end') {
+  if (!value) return boundary === 'start' ? '0000-00-00' : '9999-99-99'
+  if (/^\d{4}-\d{2}$/.test(value)) return boundary === 'start' ? `${value}-01` : `${value}-31`
+  return value
+}
+
 function relationMatchesTime(item: DirectRelationItem, startTime: string, endTime: string) {
-  const start = startTime || '0000-00'
-  const end = endTime || '9999-99'
-  return item.relationEnd >= start && item.relationStart <= end
+  const start = startTime ? normalizeDateBoundary(startTime, 'start') : '0000-00-00'
+  const end = endTime ? normalizeDateBoundary(endTime, 'end') : '9999-99-99'
+  return normalizeDateBoundary(item.relationEnd, 'end') >= start && normalizeDateBoundary(item.relationStart, 'start') <= end
 }
 
 function createItem(seed: RelationSeed, expertA: DirectRelationExpert, now: string): DirectRelationItem {
@@ -464,8 +470,8 @@ function makeResponse(input: DirectRelationQueryRequest, now: string): DirectRel
 export function useExpertDirectRelation(enabled: () => boolean) {
   const form = reactive<DirectRelationQueryRequest>({
     expert_id: 'E10001',
-    start_time: '2020-01',
-    end_time: '2024-12',
+    start_time: '2020-01-01',
+    end_time: '2024-12-31',
     organization: '',
   })
 
