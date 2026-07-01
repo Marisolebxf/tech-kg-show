@@ -1,0 +1,319 @@
+.kg-page {
+  min-height: 100vh;
+  background: var(--page-bg);
+}
+
+.kg-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 14px rgba(72, 132, 214, 0.06);
+}
+
+.kg-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kg-panel__title {
+  position: relative;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 600;
+}
+
+.kg-panel__title::before {
+  position: absolute;
+  top: 4px;
+  left: -10px;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--primary);
+  content: "";
+}
+
+.kg-panel__body {
+  padding: 12px;
+}
+
+.kg-muted {
+  color: var(--text-tertiary);
+}
+
+.kg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kg-stat__value {
+  color: var(--text-primary);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.kg-stat__label {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+
+.kg-control {
+  height: var(--control-height);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.kg-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-inverse);
+  background: var(--primary);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.kg-button:hover {
+  border-color: var(--primary-hover);
+  background: var(--primary-hover);
+}
+
+.kg-button--secondary {
+  color: var(--primary);
+  background: var(--surface);
+}
+
+.kg-button--text {
+  border-color: transparent;
+  color: var(--primary);
+  background: transparent;
+}
+
+.kg-graph-canvas {
+  background:
+    linear-gradient(#edf3ff 1px, transparent 1px),
+    linear-gradient(90deg, #edf3ff 1px, transparent 1px),
+    #fbfdff;
+  background-size: 24px 24px;
+}
+
+.kg-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.kg-tabs__item {
+  position: relative;
+  height: 38px;
+  border: 0;
+  cursor: pointer;
+  color: var(--text-secondary);
+  background: transparent;
+  font-size: 15px;
+}
+
+.kg-tabs__item.is-active {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.kg-tabs__item.is-active::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--primary);
+  content: "";
+}
+
+/* Prototype-wide density rules: keep all module tables and code panels on one visual scale. */
+.developer-table th,
+.developer-table td,
+.reasoning-placeholder__developer-table th,
+.reasoning-placeholder__developer-table td {
+  height: auto !important;
+  min-height: 30px !important;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  line-height: 18px !important;
+  vertical-align: top !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
+.developer-table thead th,
+.reasoning-placeholder__developer-table thead th {
+  white-space: nowrap !important;
+}
+
+.developer-table-wrap,
+.reasoning-placeholder__table-wrap {
+  height: calc(100% - 44px) !important;
+  margin: 0 4px 12px !important;
+}
+
+.developer-table th:nth-child(1),
+.developer-table td:nth-child(1),
+.reasoning-placeholder__developer-table th:nth-child(1),
+.reasoning-placeholder__developer-table td:nth-child(1) {
+  width: 38% !important;
+}
+
+.developer-table th:nth-child(2),
+.developer-table td:nth-child(2),
+.reasoning-placeholder__developer-table th:nth-child(2),
+.reasoning-placeholder__developer-table td:nth-child(2) {
+  width: 15% !important;
+}
+
+.developer-view__cards .kg-panel:nth-child(2) .developer-table th:nth-child(1),
+.developer-view__cards .kg-panel:nth-child(2) .developer-table td:nth-child(1),
+.reasoning-placeholder__developer-cards .kg-panel:nth-child(2) .reasoning-placeholder__developer-table th:nth-child(1),
+.reasoning-placeholder__developer-cards .kg-panel:nth-child(2) .reasoning-placeholder__developer-table td:nth-child(1) {
+  width: 48% !important;
+}
+
+.developer-view__cards .kg-panel:nth-child(2) .developer-table th:nth-child(2),
+.developer-view__cards .kg-panel:nth-child(2) .developer-table td:nth-child(2),
+.reasoning-placeholder__developer-cards .kg-panel:nth-child(2) .reasoning-placeholder__developer-table th:nth-child(2),
+.reasoning-placeholder__developer-cards .kg-panel:nth-child(2) .reasoning-placeholder__developer-table td:nth-child(2) {
+  width: 14% !important;
+}
+
+.developer-code pre,
+.reasoning-placeholder__developer-code pre {
+  padding: 12px 24px !important;
+  font-size: 12px !important;
+  line-height: 20px !important;
+}
+
+.developer-code,
+.reasoning-placeholder__developer-code {
+  margin-bottom: 12px !important;
+}
+
+.result-panel__table dt,
+.result-panel__table dd,
+.reasoning-placeholder__table dt,
+.reasoning-placeholder__table dd {
+  font-size: 14px !important;
+  line-height: 20px !important;
+}
+
+.result-panel__table div,
+.reasoning-placeholder__table div {
+  min-height: 38px !important;
+}
+
+.reasoning-placeholder,
+.expert-colleague,
+.paper-cooperation,
+.enterprise-relation,
+.expert-direct {
+  gap: 10px !important;
+}
+
+.reasoning-placeholder__toolbar,
+.expert-colleague__toolbar,
+.paper-cooperation__toolbar,
+.enterprise-relation__toolbar,
+.expert-direct__toolbar {
+  min-height: 40px !important;
+  padding: 0 14px !important;
+}
+
+.reasoning-placeholder__controls,
+.search-panel-inline,
+.paper-cooperation__search,
+.enterprise-relation__search,
+.expert-direct__search {
+  min-height: 40px !important;
+  padding: 0 14px 2px !important;
+  gap: 10px !important;
+  font-size: 14px !important;
+}
+
+.reasoning-placeholder__controls select,
+.search-panel-inline select,
+.paper-cooperation__search select,
+.enterprise-relation__search select,
+.expert-direct__search select,
+.developer-view__meta input,
+.developer-view__meta select,
+.reasoning-placeholder__developer-meta input,
+.reasoning-placeholder__developer-meta select {
+  height: 32px !important;
+  font-size: 14px !important;
+}
+
+.reasoning-placeholder__main,
+.expert-colleague__main,
+.paper-cooperation__main,
+.enterprise-relation__main,
+.expert-direct__main {
+  gap: 12px !important;
+  padding: 12px !important;
+}
+
+.developer-view,
+.reasoning-placeholder__developer {
+  grid-template-rows: 40px minmax(0, 1.35fr) minmax(0, 1fr) !important;
+  gap: 12px !important;
+  padding: 0 14px 14px !important;
+}
+
+.developer-view::before,
+.reasoning-placeholder__developer::before {
+  top: 52px !important;
+  right: 14px !important;
+  bottom: 14px !important;
+  left: 14px !important;
+}
+
+.developer-view__meta,
+.reasoning-placeholder__developer-meta {
+  min-height: 40px !important;
+  gap: 36px !important;
+  font-size: 14px !important;
+}
+
+.developer-view__cards,
+.reasoning-placeholder__developer-cards {
+  gap: 12px !important;
+  padding: 12px 12px 0 !important;
+}
+
+.result-panel__tabs button,
+.reasoning-placeholder__tabs button,
+.profile-card-like-tabs button {
+  height: 26px !important;
+  padding: 0 10px !important;
+  font-size: 14px !important;
+}
+
+.developer-code__copy,
+.reasoning-placeholder__copy {
+  width: 34px !important;
+  height: 34px !important;
+  right: 18px !important;
+  bottom: 18px !important;
+}
