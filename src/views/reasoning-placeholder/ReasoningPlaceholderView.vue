@@ -2128,12 +2128,6 @@ function handleIndustryInput(field: keyof typeof industryChainForm, value: strin
   industryChainForm[field] = value
 }
 
-function dynamicInputWidth(value: string) {
-  const textLength = Array.from(String(value || '')).reduce((sum, char) => sum + (/[\u4e00-\u9fa5]/.test(char) ? 2 : 1), 0)
-  const width = Math.min(46, Math.max(16, textLength + 8))
-  return { width: `min(100%, ${width}ch)` }
-}
-
 function toggleIndustryLink(linkId: string) {
   collapsedIndustryLinks.value = {
     ...collapsedIndustryLinks.value,

@@ -410,19 +410,6 @@ function buildDetailRows(item: DirectRelationItem): [string, unknown][] {
   ]
 }
 
-function relationMatchesOrganization(item: DirectRelationItem, organization: string) {
-  const keyword = organization.trim()
-  if (!keyword) return true
-
-  return [
-    item.expertA.organization,
-    item.expertB.organization,
-    item.institution,
-    item.collaborationScene,
-    item.cooperationOutcome,
-  ].some((value) => String(value ?? '').includes(keyword))
-}
-
 function normalizeDateBoundary(value: string, boundary: 'start' | 'end') {
   if (!value) return boundary === 'start' ? '0000-00-00' : '9999-99-99'
   if (/^\d{4}-\d{2}$/.test(value)) return boundary === 'start' ? `${value}-01` : `${value}-31`

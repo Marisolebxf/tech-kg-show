@@ -45,8 +45,6 @@ const props = defineProps<{
   response: DirectRelationQueryResponse | null
 }>()
 
-const viewBoxWidth = 920
-const viewBoxHeight = 650
 const center = { x: 350, y: 278, width: 220, height: 86 }
 const markerTones: Array<Exclude<NodeTone, 'center'>> = ['green', 'purple', 'orange', 'cyan', 'blue', 'gold']
 const slots: Slot[] = [
