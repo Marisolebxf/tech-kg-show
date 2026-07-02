@@ -82,7 +82,7 @@ const colleagueSamples = [
     name: '专家A｜清华知识工程团队',
     query: { expert_id: 'E10001', start_time: '2018-01-01', end_time: '2024-12-31', organization: '清华大学' },
     data: {
-      expert: { expert_id: 'E10001', expert_name: '专家A', expert_title: '研究员' },
+                  expert: { expert_id: 'E10001', expert_name: '张明远', expert_title: '研究员' },
       work_history: [
         {
           organization: '清华大学',
@@ -97,7 +97,7 @@ const colleagueSamples = [
       ],
       colleague_relations: [
         {
-          colleague_expert: { expert_id: 'E10002', expert_name: '专家B', expert_title: '副研究员' },
+          colleague_expert: { expert_id: 'E10002', expert_name: '李佳宁', expert_title: '副研究员' },
           organization: '清华大学',
           department: '计算机科学与技术系',
           team_or_project: '知识工程实验室',
@@ -115,7 +115,7 @@ const colleagueSamples = [
           ],
         },
         {
-          colleague_expert: { expert_id: 'E10003', expert_name: '专家C', expert_title: '教授' },
+          colleague_expert: { expert_id: 'E10003', expert_name: '陈思远', expert_title: '教授' },
           organization: '清华大学',
           department: '计算机科学与技术系',
           team_or_project: '知识工程实验室',
@@ -133,7 +133,7 @@ const colleagueSamples = [
           ],
         },
         {
-          colleague_expert: { expert_id: 'E10004', expert_name: '专家D', expert_title: '高级工程师' },
+          colleague_expert: { expert_id: 'E10004', expert_name: '赵清宁', expert_title: '高级工程师' },
           organization: '清华大学',
           department: '计算机科学与技术系',
           team_or_project: '智能科研协同平台建设项目',
@@ -158,7 +158,7 @@ const colleagueSamples = [
     name: '专家A｜浙江机器人联合实验室',
     query: { expert_id: 'E20001', start_time: '2020-01-01', end_time: '2025-12-31', organization: '浙江大学' },
     data: {
-      expert: { expert_id: 'E20001', expert_name: '专家A', expert_title: '教授' },
+                  expert: { expert_id: 'E20001', expert_name: '陈建国', expert_title: '教授' },
       work_history: [
         { organization: '浙江大学', department: '机器人研究院', team_or_project: '机器人联合实验室', start_time: '2020-01', end_time: '2025-12' },
       ],
@@ -167,7 +167,7 @@ const colleagueSamples = [
       ],
       colleague_relations: [
         {
-          colleague_expert: { expert_id: 'E20002', expert_name: '专家B', expert_title: '研究员' },
+          colleague_expert: { expert_id: 'E20002', expert_name: '李佳宁', expert_title: '研究员' },
           organization: '浙江大学',
           department: '机器人研究院',
           team_or_project: '机器人联合实验室',
@@ -178,7 +178,7 @@ const colleagueSamples = [
           cooperation_achievements: [{ achievement_id: 'A20001', achievement_name: '面向服务机器人的多模态控制系统', achievement_type: '项目', achievement_time: '2024-05' }],
         },
         {
-          colleague_expert: { expert_id: 'E20003', expert_name: '专家C', expert_title: '副教授' },
+          colleague_expert: { expert_id: 'E20003', expert_name: '陈思远', expert_title: '副教授' },
           organization: '浙江大学',
           department: '机器人研究院',
           team_or_project: '智能装备攻关项目组',
@@ -196,7 +196,7 @@ const colleagueSamples = [
     name: '专家A｜复旦药物靶点项目组',
     query: { expert_id: 'E30001', start_time: '2019-01-01', end_time: '2024-12-31', organization: '复旦大学' },
     data: {
-      expert: { expert_id: 'E30001', expert_name: '专家A', expert_title: '研究员' },
+                  expert: { expert_id: 'E30001', expert_name: '周子谦', expert_title: '研究员' },
       work_history: [
         { organization: '复旦大学', department: '药学院', team_or_project: '药物靶点项目组', start_time: '2019-01', end_time: '2024-12' },
       ],
@@ -205,7 +205,7 @@ const colleagueSamples = [
       ],
       colleague_relations: [
         {
-          colleague_expert: { expert_id: 'E30002', expert_name: '专家B', expert_title: '副研究员' },
+          colleague_expert: { expert_id: 'E30002', expert_name: '李佳宁', expert_title: '副研究员' },
           organization: '复旦大学',
           department: '药学院',
           team_or_project: '药物靶点项目组',
@@ -216,7 +216,7 @@ const colleagueSamples = [
           cooperation_achievements: [{ achievement_id: 'A30001', achievement_name: '基于知识图谱的药物靶点发现方法', achievement_type: '论文', achievement_time: '2022-11' }],
         },
         {
-          colleague_expert: { expert_id: 'E30003', expert_name: '专家C', expert_title: '博士后' },
+          colleague_expert: { expert_id: 'E30003', expert_name: '陈思远', expert_title: '博士后' },
           organization: '复旦大学',
           department: '药学院',
           team_or_project: '转化医学联合课题组',
@@ -425,6 +425,31 @@ interface GraphEdge {
 
 const currentListData = computed(() => colleagueSamples[activeSampleIndex.value]?.data ?? colleagueSamples[0].data)
 
+const colleagueExpertNameMap = computed(() => {
+  const entries = colleagueSamples.flatMap((sample) => [
+    [sample.query.expert_id, sample.data.expert.expert_name],
+    ...sample.data.colleague_relations.map((relation) => [relation.colleague_expert.expert_id, relation.colleague_expert.expert_name]),
+  ])
+  return Object.fromEntries(entries)
+})
+
+function displayParameterField(field: string) {
+  const names: Record<string, string> = {
+    expert_id: '专家名称',
+    source_expert_id: '源专家名称',
+    target_expert_id: '目标专家名称',
+    start_time: '开始时间',
+    end_time: '结束时间',
+    organization: '工作单位',
+  }
+  return names[field] ?? field
+}
+
+function displayParameterValue(field: string, value: string) {
+  if (field.includes('expert_id')) return colleagueExpertNameMap.value[value] ?? value
+  return value
+}
+
 const currentDetailData = computed(() => {
   const sourceId = currentParameterValue('source_expert_id') || currentListData.value.expert.expert_id
   const targetId = currentParameterValue('target_expert_id')
@@ -616,7 +641,7 @@ function buildDetailGraphNodes(): GraphNode[] {
       y: 62,
       width: 172,
       height: 70,
-      title: `专家B：${detail.target_expert.expert_name}`,
+      title: `李佳宁：${detail.target_expert.expert_name}`,
       subtitle: detail.target_expert.expert_title,
     },
     {
@@ -871,15 +896,15 @@ const structuredRows = computed(() => {
       ['专家A', detail.source_expert.expert_name],
       ['专家A职称', detail.source_expert.expert_title],
       ['专家A机构', detail.organization_structure.organization],
-      ['专家B', detail.target_expert.expert_name],
-      ['专家B职称', detail.target_expert.expert_title],
-      ['专家B机构', detail.organization_structure.organization],
-      ['专家B所属部门', detail.organization_structure.department],
-      ['专家B所属团队/项目组', detail.organization_structure.team_or_project],
-      ['专家B同事关系生效时段', `${detail.colleague_relation.effective_start_time} - ${detail.colleague_relation.effective_end_time}`],
-      ['专家B共同工作内容', detail.colleague_relation.common_work_content],
-      ['专家B协作场景', detail.colleague_relation.collaboration_scenario],
-      ['专家B合作成果', achievements],
+      ['李佳宁', detail.target_expert.expert_name],
+      ['李佳宁职称', detail.target_expert.expert_title],
+      ['李佳宁机构', detail.organization_structure.organization],
+      ['李佳宁所属部门', detail.organization_structure.department],
+      ['李佳宁所属团队/项目组', detail.organization_structure.team_or_project],
+      ['李佳宁同事关系生效时段', `${detail.colleague_relation.effective_start_time} - ${detail.colleague_relation.effective_end_time}`],
+      ['李佳宁共同工作内容', detail.colleague_relation.common_work_content],
+      ['李佳宁协作场景', detail.colleague_relation.collaboration_scenario],
+      ['李佳宁合作成果', achievements],
     ]
   }
   return replaceScenarioDeep(rows)
@@ -1220,8 +1245,8 @@ watch(activeSampleIndex, () => {
             />
             <div v-else class="combo-field" @click.stop>
               <input
-                :value="currentParameterValue(param.field)"
-                :placeholder="`请选择或输入${param.field}`"
+                :value="displayParameterValue(param.field, currentParameterValue(param.field))"
+                :placeholder="`请选择或输入${displayParameterField(param.field)}`"
                 @focus="activeParamMenu = param.field"
                 @input="handleParameterInput(param.field, $event)"
               />
@@ -1236,7 +1261,7 @@ watch(activeSampleIndex, () => {
                   :class="{ 'is-selected': currentParameterValue(param.field) === value }"
                   @click="selectParameterOption(param.field, value)"
                 >
-                  {{ value }}
+                  {{ displayParameterValue(param.field, value) }}
                 </button>
               </div>
             </div>
@@ -1464,8 +1489,7 @@ watch(activeSampleIndex, () => {
 }
 
 .graph-panel__state--error {
-  border-color: #ffccc7;
-  background: #fff2f0;
+  color: var(--text-secondary);
 }
 
 .graph-panel__state strong {

@@ -11,15 +11,15 @@ import type {
 const ENDPOINT = '/api/v1/kg-construction/expert-direct'
 
 const requestFields: DocField[] = [
-  { name: 'expert_id', type: 'string', required: '是', description: '核心科技专家唯一标识，支持从示例专家中选择或手动输入' },
-  { name: 'start_time', type: 'string', required: '否', description: '查询开始时间，格式 YYYY-MM' },
-  { name: 'end_time', type: 'string', required: '否', description: '查询结束时间，格式 YYYY-MM' },
-  { name: 'organization', type: 'string', required: '否', description: '工作单位、协作机构或项目组织关键词，支持下拉选择或手动输入' },
+  { name: 'expert_id', type: 'string', required: '是', description: '核心专家，算法测试中展示中文姓名，接口传参使用专家ID' },
+  { name: 'start_time', type: 'string', required: '否', description: '查询开始时间，格式 YYYY-MM-DD' },
+  { name: 'end_time', type: 'string', required: '否', description: '查询结束时间，格式 YYYY-MM-DD' },
+  { name: 'organization', type: 'string', required: '否', description: '机构/项目关键词，算法测试中使用中文机构名称；与 expert_id 组合返回不同直接关系结果' },
 ]
 
 const responseFields: DocField[] = [
   { name: 'expert_direct_relation', type: 'object', description: '当前查询的科技专家直接关系信息' },
-  { name: 'items', type: 'array', description: '该专家的直接关系列表' },
+  { name: 'items', type: 'array', description: '直接关系专家列表，与算法测试图谱节点、结构化详情保持一致' },
   { name: 'expert', type: 'array', description: '专家在不同时期的工作单位、部门、团队或项目组信息' },
   { name: 'graph', type: 'array', description: '图谱相关数据' },
   { name: 'detailRows', type: 'array', description: '结构化展示' },
@@ -318,9 +318,77 @@ const organizationOptions = [
   '清华大学智能产业研究院',
   '中国科学院自动化研究所',
   '浙江大学机器人研究院',
-  '复旦大学药学院',
 ]
 
+const combinationCounts: Record<string, number[]> = {
+  E10001: [6, 4, 5],
+  E20001: [3, 7, 4],
+  E30001: [5, 3, 6],
+}
+
+const syntheticExperts = [
+  { name: '周威', title: '教授', organization: '北京航空航天大学计算机学院' },
+  { name: '陈思远', title: '副研究员', organization: '中国科学院自动化研究所' },
+  { name: '赵清宁', title: '高级工程师', organization: '灵动机器人有限公司' },
+  { name: '马清源', title: '研究员', organization: '上海交通大学智能制造学院' },
+  { name: '顾雨辰', title: '副教授', organization: '复旦大学药学院' },
+  { name: '何嘉禾', title: '教授', organization: '同济大学生命科学学院' },
+  { name: '韩思远', title: '副研究员', organization: '西安交通大学人工智能学院' },
+  { name: '林远航', title: '研究员', organization: '中国科学院上海药物研究所' },
+]
+
+const syntheticRelationTypes = [
+  { type: '论文合作关系', summary: '论文合作', tags: ['论文合作', '共同作者'], outcome: '联合发表高水平论文并形成持续合作团队' },
+  { type: '项目合作关系', summary: '项目合作', tags: ['项目协作', '联合攻关'], outcome: '共同承担科研项目并完成阶段性验收' },
+  { type: '专利合作关系', summary: '专利合作', tags: ['专利共创', '成果转化'], outcome: '联合申请发明专利并推进成果转化' },
+  { type: '学术交流关系', summary: '学术交流', tags: ['学术交流', '会议报告'], outcome: '围绕前沿方向开展系列学术交流' },
+  { type: '技术合作关系', summary: '技术合作', tags: ['技术合作', '平台共建'], outcome: '共建技术验证平台并输出技术报告' },
+]
+
+function buildSyntheticRelation(expertId: string, organization: string, index: number): RelationSeed {
+  const expert = syntheticExperts[(index + expertId.charCodeAt(1) + organization.length) % syntheticExperts.length]
+  const relation = syntheticRelationTypes[(index + organization.length) % syntheticRelationTypes.length]
+  const startMonth = String((index % 9) + 1).padStart(2, '0')
+  const endMonth = String(((index + 4) % 9) + 3).padStart(2, '0')
+  return {
+    key: `direct-${expertId}-${organization}-${index}`,
+    relationType: relation.type,
+    expertB: {
+      expertId: `${expertId}-R${index}`,
+      name: expert.name,
+      organization: expert.organization,
+      title: expert.title,
+      paperCount: 36 + index * 7,
+      citationCount: 420 + index * 160,
+      hIndex: 10 + index,
+    },
+    institution: organization,
+    coPaperCount: index + 2,
+    relationStrength: 70 + index * 3,
+    reasonTags: relation.tags,
+    relationSummary: relation.summary,
+    collaborationScene: `${organization}牵头的${relation.summary}场景`,
+    cooperationTime: `2020-${startMonth} 至 2024-${endMonth}`,
+    cooperationOutcome: relation.outcome,
+    relationStart: `2020-${startMonth}`,
+    relationEnd: `2024-${endMonth}`,
+  }
+}
+
+function relationsForCombination(expertId: string, seed: ExpertSeed, organization: string) {
+  const orgIndex = organizationOptions.indexOf(organization)
+  if (orgIndex < 0) return seed.relations
+  const count = combinationCounts[expertId]?.[orgIndex] ?? seed.relations.length
+  return Array.from({ length: count }, (_, index) => {
+    const relation = index < seed.relations.length ? seed.relations[index] : buildSyntheticRelation(expertId, organization, index)
+    return {
+      ...relation,
+      key: `${relation.key}-${orgIndex}-${index}`,
+      institution: organization,
+      collaborationScene: `${organization}｜${relation.collaborationScene}`,
+    }
+  })
+}
 const timeOptions = {
   start_time: ['2018-01-01', '2019-01-01', '2020-01-01', '2021-01-01', '2022-01-01'],
   end_time: ['2023-12-31', '2024-12-31', '2025-12-31', '2026-12-31'],
@@ -382,9 +450,11 @@ function makeResponse(input: DirectRelationQueryRequest, now: string): DirectRel
   const seed = expertSeeds[input.expert_id.trim()]
   if (!seed) return null
 
-  const items = seed.relations
+  const relations = input.organization.trim()
+    ? relationsForCombination(input.expert_id.trim(), seed, input.organization.trim())
+    : seed.relations
+  const items = relations
     .map((relation) => createItem(relation, seed.expert, now))
-    .filter((item) => relationMatchesOrganization(item, input.organization))
     .filter((item) => relationMatchesTime(item, input.start_time, input.end_time))
 
   if (!items.length) {

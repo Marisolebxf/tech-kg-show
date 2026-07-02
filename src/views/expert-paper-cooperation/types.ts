@@ -1,7 +1,4 @@
-export type DataSource = 'all' | 'mysql' | 'knowledge_graph'
-
 export interface ExpertPaperCooperationDemoRequest {
-  dataSource: DataSource
   expertAId: string
   expertBId: string
   startTime: string
@@ -23,7 +20,6 @@ export interface StructuredResultPayload {
   stableTeamMembers?: string[]
   coreTeamMembers?: string[]
   sharedContribution?: string[]
-  dataSource?: DataSource
 }
 
 export interface ExpertPaperCooperationStructuredResultOnlyResponse {

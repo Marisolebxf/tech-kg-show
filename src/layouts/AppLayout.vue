@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onErrorCaptured, ref } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
 
 import iconMenuCollapse from '../assets/icons/icon-menu-collapse.svg'
@@ -13,6 +13,12 @@ import logoKg from '../assets/images/logo-kg.png'
 
 const route = useRoute()
 const pageTitle = computed(() => String(route.meta.title ?? '亿级知识图谱'))
+const routeError = ref('')
+
+onErrorCaptured((error) => {
+  routeError.value = error instanceof Error ? error.message : String(error)
+  return false
+})
 </script>
 
 <template>
@@ -79,7 +85,11 @@ const pageTitle = computed(() => String(route.meta.title ?? '亿级知识图谱'
 
         <main class="app-main">
           <section class="app-workspace" :aria-label="pageTitle">
-            <RouterView />
+            <div v-if="routeError" class="route-error">
+              <strong>页面渲染异常</strong>
+              <span>{{ routeError }}</span>
+            </div>
+            <RouterView v-else />
           </section>
         </main>
       </div>
@@ -293,6 +303,27 @@ const pageTitle = computed(() => String(route.meta.title ?? '亿级知识图谱'
     0 0 0 15px rgba(117, 171, 244, 0.22),
     0 22px 48px rgba(48, 105, 194, 0.22);
   overflow: hidden;
+}
+
+.route-error {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  height: 100%;
+  padding: 32px;
+  color: #b42318;
+  background: #fff7f6;
+  border: 1px solid #fecdca;
+  border-radius: var(--radius-md);
+}
+
+.route-error strong {
+  font-size: 18px;
+}
+
+.route-error span {
+  color: #912018;
+  overflow-wrap: anywhere;
 }
 
 @media (max-height: 820px), (max-width: 1500px) {

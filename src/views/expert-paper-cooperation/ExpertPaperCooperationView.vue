@@ -12,7 +12,6 @@ import flowOutput from '../../assets/icons/技术方案-结果输出.svg'
 import flowInput from '../../assets/icons/技术方案-输入数据.svg'
 import flowArrow from '../../assets/icons/技术方案-箭头.svg'
 import type {
-  DataSource,
   ExpertPaperCooperationDemoRequest,
   ExpertPaperCooperationStructuredResultOnlyResponse,
 } from './types'
@@ -20,14 +19,7 @@ import type {
 const endpoint = '/api/v1/scholar-paper-cooperation/demo/structured-result'
 const featureName = '专家论文合作关系查询接口'
 
-const dataSourceOptions: Array<{ label: string; value: DataSource }> = [
-  { label: 'all', value: 'all' },
-  { label: 'mysql', value: 'mysql' },
-  { label: 'knowledge_graph 知识图谱', value: 'knowledge_graph' },
-]
-
 const defaultParams: ExpertPaperCooperationDemoRequest = {
-  dataSource: 'knowledge_graph',
   expertAId: 'E10001',
   expertBId: 'E10002',
   startTime: '2021-01-01',
@@ -60,7 +52,6 @@ const mockStructuredResult: ExpertPaperCooperationStructuredResultOnlyResponse =
     coreTeamMembers: ['陈建国', '刘芳', '周子谦'],
     stableTeamMembers: ['陈建国', '刘芳', '周子谦', '吴若彤', '李佳宁', '张明远', '王启航'],
     sharedContribution: ['联合论文产出', '高被引合作成果', '跨机构协同研究', '知识图谱联合研究'],
-    dataSource: 'knowledge_graph',
   },
 }
 
@@ -82,7 +73,7 @@ const paperSamples = [
   { name: '清北学术图谱合作', params: defaultParams, replacements: {} },
   {
     name: '机器人论文合作',
-    params: { dataSource: 'mysql' as DataSource, expertAId: 'E20001', expertBId: 'E20002', startTime: '2020-01-01', endTime: '2025-12-31' },
+    params: { expertAId: 'E20001', expertBId: 'E20002', startTime: '2020-01-01', endTime: '2025-12-31' },
     replacements: {
       陈建国: '陈建国',
       刘芳: '刘芳',
@@ -102,7 +93,7 @@ const paperSamples = [
   },
   {
     name: '生物医药论文合作',
-    params: { dataSource: 'all' as DataSource, expertAId: 'E30001', expertBId: 'E30002', startTime: '2019-01-01', endTime: '2024-12-31' },
+    params: { expertAId: 'E30001', expertBId: 'E30002', startTime: '2019-01-01', endTime: '2024-12-31' },
     replacements: {
       陈建国: '周子谦',
       刘芳: '吴若彤',
@@ -122,7 +113,7 @@ const paperSamples = [
   },
   {
     name: '量子信息论文合作',
-    params: { dataSource: 'knowledge_graph' as DataSource, expertAId: 'E40001', expertBId: 'E40002', startTime: '2022-01-01', endTime: '2026-12-31' },
+    params: { expertAId: 'E40001', expertBId: 'E40002', startTime: '2022-01-01', endTime: '2026-12-31' },
     replacements: {
       陈建国: '韩思远',
       刘芳: '李明哲',
@@ -156,16 +147,9 @@ function replacePaperDeep<T>(value: T): T {
   return value
 }
 
-const dataSourceCountOffset: Record<DataSource, number> = {
-  all: 2,
-  mysql: -1,
-  knowledge_graph: 0,
-}
-
 const currentMockResult = computed(() => {
   const result = replacePaperDeep(mockStructuredResult)
   const structured = result.structuredResult
-  const offset = dataSourceCountOffset[appliedParams.value.dataSource] ?? 0
   const startYear = Number(appliedParams.value.startTime.slice(0, 4))
   const endYear = Number(appliedParams.value.endTime.slice(0, 4))
   const yearSpan = Math.max(1, endYear - startYear + 1)
@@ -175,19 +159,13 @@ const currentMockResult = computed(() => {
     structured.authorList = [expertA.name, expertB.name]
     structured.authorUnits = [expertA.unit, expertB.unit]
   }
-  structured.cooperationPaperCount = Math.max(1, Math.min(8, structured.cooperationPaperCount + offset, yearSpan * 2))
+  structured.cooperationPaperCount = Math.max(1, Math.min(8, structured.cooperationPaperCount, yearSpan * 2))
   structured.cooperationFrequency = structured.cooperationPaperCount
-  structured.academicImpactScore = Math.max(40, Number((structured.academicImpactScore + offset * 4.6).toFixed(1)))
-  structured.citation = {
-    total: Math.max(0, structured.citation.total + offset * 32),
-    max: Math.max(0, structured.citation.max + offset * 9),
-  }
   structured.cooperationTimeRange = {
     startTime: appliedParams.value.startTime,
     endTime: appliedParams.value.endTime,
     displayText: `${appliedParams.value.startTime} 至 ${appliedParams.value.endTime}`,
   }
-  structured.dataSource = appliedParams.value.dataSource
   return result
 })
 const paperParamOptions = computed(() => ({
@@ -284,11 +262,9 @@ const structuredRows = computed(() => [
   ['核心团队成员', coreTeamText.value],
   ['稳定团队成员', stableTeamText.value],
   ['合作贡献', contributionText.value],
-  ['数据来源', appliedParams.value.dataSource],
 ])
 
 const developerRequestFields = [
-  { name: 'dataSource', type: 'string', required: '是', description: '论文数据源，可选：all、mysql、knowledge_graph' },
   { name: 'expertAId', type: 'string', required: '是', description: '专家 A 唯一标识' },
   { name: 'expertBId', type: 'string', required: '是', description: '专家 B 唯一标识' },
   { name: 'startTime', type: 'string', required: '否', description: '开始时间，格式 YYYY-MM-DD' },
@@ -314,7 +290,6 @@ const developerResponseFields = [
   { name: 'data.structuredResult.coreTeamMembers', type: 'array', description: '核心团队成员' },
   { name: 'data.structuredResult.stableTeamMembers', type: 'array', description: '长期稳定合作团队成员' },
   { name: 'data.structuredResult.sharedContribution', type: 'array', description: '合作贡献标签' },
-  { name: 'data.structuredResult.dataSource', type: 'string', description: '本次查询使用的数据来源' },
 ] as const
 
 const requestPayloadText = computed(() => JSON.stringify(appliedParams.value, null, 2))
@@ -338,11 +313,18 @@ function formatNow() {
   })
 }
 
+function formatPaperExpert(value: string) {
+  return paperExpertProfiles[value]?.name ?? value
+}
+
 function runTest(payload: ExpertPaperCooperationDemoRequest = appliedParams.value) {
   loading.value = false
   appliedParams.value = { ...payload }
   const sampleIndex = paperSamples.findIndex((sample) =>
-    sample.params.expertAId === payload.expertAId && sample.params.expertBId === payload.expertBId,
+    sample.params.expertAId === payload.expertAId
+    && sample.params.expertBId === payload.expertBId
+    && sample.params.startTime === payload.startTime
+    && sample.params.endTime === payload.endTime,
   )
   const validExpertA = paperParamOptions.value.expertAId.includes(payload.expertAId)
   const validExpertB = paperParamOptions.value.expertBId.includes(payload.expertBId)
@@ -433,7 +415,10 @@ onMounted(() => {
           </div>
         </div>
         <div class="graph-panel__canvas kg-graph-canvas">
-          <div v-if="error" class="graph-panel__state graph-panel__state--error">{{ error }}</div>
+          <div v-if="error" class="graph-panel__state graph-panel__state--error">
+            <strong>查询失败</strong>
+            <p>{{ error }}</p>
+          </div>
           <div v-else-if="!result" class="graph-panel__state">执行测试后将在这里展示合作关系图谱。</div>
           <svg v-else viewBox="0 0 720 520" role="img" aria-label="专家论文合作关系图谱预览">
             <defs>
@@ -533,7 +518,11 @@ onMounted(() => {
               <button :class="{ 'is-active': resultMode === 'api' }" type="button" @click="resultMode = 'api'">API结果示例</button>
             </div>
           </div>
-          <dl v-if="resultMode === 'structured'" class="result-panel__table scroll-on-demand">
+          <div v-if="resultMode === 'structured' && error" class="result-empty">
+            <strong>查询失败</strong>
+            <p>{{ error }}</p>
+          </div>
+          <dl v-else-if="resultMode === 'structured'" class="result-panel__table scroll-on-demand">
             <div
               v-for="([label, value]) in structuredRows"
               :key="label"
@@ -627,23 +616,16 @@ onMounted(() => {
         </header>
         <div class="modal__body config-form">
           <label>
-            <span><i>*</i>dataSource</span>
-            <select v-model="draftParams.dataSource">
-              <option v-for="option in dataSourceOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-            <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
-          </label>
-          <label>
             <span><i>*</i>expertAId</span>
             <select v-model="draftParams.expertAId">
-              <option v-for="value in paperParamOptions.expertAId" :key="value" :value="value">{{ value }}</option>
+              <option v-for="value in paperParamOptions.expertAId" :key="value" :value="value">{{ formatPaperExpert(value) }}</option>
             </select>
             <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           </label>
           <label>
             <span><i>*</i>expertBId</span>
             <select v-model="draftParams.expertBId">
-              <option v-for="value in paperParamOptions.expertBId" :key="value" :value="value">{{ value }}</option>
+              <option v-for="value in paperParamOptions.expertBId" :key="value" :value="value">{{ formatPaperExpert(value) }}</option>
             </select>
             <img class="select-icon" :src="iconSelectArrow" alt="" aria-hidden="true" />
           </label>
@@ -845,6 +827,30 @@ onMounted(() => {
   height: 100%;
   min-height: 0;
   overflow: hidden;
+}
+
+.result-empty {
+  display: grid;
+  width: 360px;
+  min-height: 180px;
+  place-items: center;
+  align-self: center;
+  justify-self: center;
+  padding: 24px;
+  border: 1px dashed #b5d3fc;
+  border-radius: 18px;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.7;
+}
+
+.result-empty strong {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.result-empty p {
+  margin: 0;
 }
 
 .graph-panel__time {
@@ -1686,12 +1692,24 @@ onMounted(() => {
 
 .graph-panel__state {
   display: grid;
-  width: 100%;
-  height: 100%;
+  width: 360px;
+  min-height: 180px;
   place-items: center;
-  border: 1px dashed rgba(22, 93, 255, 0.16);
+  padding: 24px;
+  border: 1px dashed #b5d3fc;
+  border-radius: 18px;
   color: var(--text-secondary);
   text-align: center;
+  line-height: 1.7;
+}
+
+.graph-panel__state strong {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.graph-panel__state p {
+  margin: 0;
 }
 
 .graph-panel__state--loading {
@@ -1699,7 +1717,7 @@ onMounted(() => {
 }
 
 .graph-panel__state--error {
-  color: var(--danger);
+  color: var(--text-secondary);
 }
 
 </style>

@@ -57,8 +57,19 @@ function selectComboOption(field: 'expert_id' | 'organization', value: string) {
 }
 
 function formatExpertOption(value: string) {
-  const name = expertOptionNames[value]
-  return name ? `${value}  ${name}` : value
+  return expertOptionNames[value] ?? value
+}
+
+function parseExpertOption(value: string) {
+  return Object.entries(expertOptionNames).find(([, name]) => name === value)?.[0] ?? value
+}
+
+function handleExpertInput(event: Event) {
+  form.expert_id = parseExpertOption((event.target as HTMLInputElement).value)
+}
+
+function handleOrganizationInput(event: Event) {
+  form.organization = (event.target as HTMLInputElement).value
 }
 
 function closeModal() {
@@ -155,7 +166,7 @@ async function handleSaveAndExecute() {
           <label>
             <span><i>*</i>expert_id</span>
             <div class="combo-field" @click.stop>
-              <input v-model="form.expert_id" placeholder="请选择或输入专家ID" @focus="activeComboField = 'expert_id'" />
+              <input :value="formatExpertOption(form.expert_id)" placeholder="请选择或输入专家姓名" @focus="activeComboField = 'expert_id'" @input="handleExpertInput" />
               <button class="combo-field__arrow" type="button" @click="toggleCombo('expert_id')">
                 <img :src="iconSelectArrow" alt="" aria-hidden="true" />
               </button>
@@ -175,7 +186,7 @@ async function handleSaveAndExecute() {
           <label>
             <span>organization</span>
             <div class="combo-field" @click.stop>
-              <input v-model="form.organization" placeholder="请选择或输入机构/项目关键词" @focus="activeComboField = 'organization'" />
+              <input :value="form.organization" placeholder="请选择或输入机构/项目关键词" @focus="activeComboField = 'organization'" @input="handleOrganizationInput" />
               <button class="combo-field__arrow" type="button" @click="toggleCombo('organization')">
                 <img :src="iconSelectArrow" alt="" aria-hidden="true" />
               </button>
